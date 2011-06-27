@@ -1,0 +1,154 @@
+hwdecode-demos NEWS -- summary of changes.  2010-05-DD
+Copyright (C) 2009-2010 Splitted-Desktop Systems
+
+Version 0.9.6 - DD.May.2011
+* Fix command line parser for --hwaccel option
+
+Version 0.9.5 - 24.Feb.2011
+* Add options description (--help)
+* Fix VDPAU/GLX build with upstream GL headers
+* VAAPI: add scaling flags ("scaling_{default,fast,hq,nla}")
+* VAAPI: add SMPTE-240M colorspace conversion flag ("smpte.240")
+* VAAPI: allow vaGetImage() with a specific region (--getimage-rect)
+
+Version 0.9.4 - 06.Oct.2010
+* GLX: allow explicit texture size (--glx-texture-size WIDTHxHEIGHT)
+* GLX: allow GL_ARB_texture_rectangle textures (--glx-texture-target rect)
+* GLX: allow rendering without reflection effect (--no-glx-use-reflection)
+* VDPAU: add support for GL_NV_vdpau_interop (--vdpau-glx-output-surface)
+* XvBA: fix multiple rendering to the same window in PCOM mode
+
+Version 0.9.3 - 18.Mar.2010
+* Fix --genimage auto mode
+* VAAPI: allow user-defined vaPutSurface() flags (--vaapi-putsurface-flags)
+* VDPAU: allow high-quality scaling on supported chips (--vdpau-hqscaling)
+* VDPAU: add support for video mixer layers (--putimage blend --vdpau-layers)
+
+Version 0.9.2 - 24.Feb.2010
+* Fix RGBA conversions (workaround for libswscale < 0.10.0)
+* Add support for more RGBA formats (--{get,put}image-format)
+* Add DtsFlushInput() demos with Crystal HD (--crystalhd-flush)
+* Add option to select GLX texture format (--glx-texture-format)
+* VAAPI: add multiple subpictures rendering (--vaapi-multi-subpictures)
+
+Version 0.9.1 - 21.Feb.2010
+* Fix NV12->NV12 image copy (libswscale workaround)
+* Add DtsProcOutputNoCopy() with Crystal HD (--crystalhd-output-nocopy)
+* Add multiple rendering to the same window with XvBA (--multi-rendering)
+* VAAPI: deprecate --vaapi-multirendering, use --multi-rendering
+* VAAPI: vaSyncSurface() is only needed with multiple vaPutSurface() calls
+
+Version 0.9.0 - 15.Feb.2010
+* Fix build with VA-API >= 0.31.0-sds5
+* Add Broadcom Crystal HD decoding demos
+
+Version 0.8.3 - 27.Jan.2010
+* Document command line options
+* Make it possible to set the PutImage surface size (--putimage-size)
+* VAAPI: allow subregion rendering of the decoded frame (--vaapi-putsurface-source-rect)
+* VAAPI: allow partial rendering of subpictures (--vaapi-subpicture-(source|target)-rect)
+
+Version 0.8.2 - 20.Jan.2010
+* Fix YV12 format for --getimage
+* Fix build with older FFmpeg and GLX headers
+* VAAPI: handle background-color display attribute (--vaapi-background-color)
+
+Version 0.8.1 - 18.Jan.2010
+* Simplify command line options system
+* VAAPI: drop explicit call to vaSyncSurface() for decoding
+* VAAPI: allow rendering at a specified location (--vaapi-render-rect)
+* VAAPI: add multiple rendering to the same window (--vaapi-multirendering)
+* Allow additional rendering into a subwindow (--subwindow [--subwindow-rect])
+
+Version 0.8.0 - 21.Dec.2009
+* Fix YUY2 alias to YUYV format
+* Add MPEG-4 decoding demos to VDPAU
+* Add VA API extensions for MPEG-4 support with the VDPAU back-end
+
+Version 0.7.5 - 06.Nov.2009
+* Expand valgrind suppressions file for XvBA
+* Rename dprintf() to debug_printf() for newer glibc
+* Add --genimage [rects|rgb-rects|flowers] option to control generated images
+* Add --vaapi-use-scaling-putimage option. Allow vaPutImage() to scale images
+
+Version 0.7.4 - 16.Oct.2009
+* Add --clipping demos to VDPAU
+* Add RGBA image format (native endian byte-order)
+* Allow build with original libVA API 0.29
+
+Version 0.7.3 - 12.Oct.2009
+* Fix build with newer Cairo headers
+* Fix RGB formats selection in VAAPI
+* Add --clipping demos for VAAPI and XvBA
+
+Version 0.7.2 - 06.Oct.2009
+* VDPAU: fix YV12 pixels readback
+* VDPAU: implement --putimage demos
+* Add option to specify an image format (--(get|put)image-format)
+* Merge FFmpeg SW and VAAPI demos into a single binary (--hwaccel vaapi)
+
+Version 0.7.1 - 04.Oct.2009
+* XvBA: fix YV12 pixels readback
+* XvBA: implement --putimage demos
+* Make FFmpeg/VAAPI demos work again
+* Add missing image.h file for make dist
+* Try to support AYUV subpicture formats
+
+Version 0.7.0 - 30.Sep.2009
+* Rename --readback to --getimage
+* Add new --putimage to demonstrate CPU to GPU image transfers:
+  - VAAPI: --putimage [override] uses vaPutImage()
+  - VAAPI: --putimage blend uses vaAssociateSubpicture()
+
+Version 0.6.2 - 08.Sep.2009
+* Add support for VA API 0.31
+* Add support for VA/GLX extensions v3
+* Print out VA API display attributes
+
+Version 0.6.1 - 27.Aug.2009
+* Add support for offscreen rendering (FBO) of texture-from-pixmap
+* Add new command-line options for GLX display:
+  - --vaapi-glx-use-copy: use vaCopySurfaceToTextureGLX() (default)
+  - --glx-alloc-pixmap-asap: allocate X11 and GLX Pixmap ASAP (default)
+  - --glx-use-fbo: use framebuffer objects with GLX_EXT_texture_from_pixmap
+
+Version 0.6.0 - 21.Aug.2009
+* Add OpenGL rendering
+* Add support for XvBA 0.74
+* Fix YV12 to RGB32 conversion
+
+Version 0.5.2 - 17.Jun.2009
+* Add a fixlet to XvBA decoding demos
+* Add valgrind suppressions file for XvBA
+
+Version 0.5.1 - 03.Jun.2009
+* Fix XvBA decoding demos
+
+Version 0.5.0 - 23.Apr.2009
+* Add VC-1 demo (VA API, VDPAU, XvBA)
+* Fix MPEG-2 decoding demo through FFmpeg
+
+Version 0.4.0 - 22.Apr.2009
+* Add FFmpeg{,+VAAPI} video decoding support
+* Add support for HW video decoding to an X Pixmap
+* Add --readback [video|output|pixmap] option (defaults to 'video')
+* VAAPI: implement RGBA readback through vaGetImage(), if available
+
+Version 0.3.1 - 16.Apr.2009
+* VAAPI: improve debugging info
+* VAAPI: allow readback in YV12, UYVY and YUYV (YUY2) formats
+* VDPAU: readback YV12 or NV12 pixels from the video surface
+
+Version 0.3.0 - 15.Apr.2009
+* Add infrastructure to read pixels back from GPU memory (VA API, VDPAU)
+
+Version 0.2.0 - 14.Apr.2009
+* Add MPEG-2 demo (VA API, VDPAU)
+* Add MPEG-4 demo (VA API)
+
+Version 0.1.1 - 11.Apr.2009
+* Add the initial H.264 clip
+* Make it possible to disable some APIs
+
+Version 0.1.0 - 10.Apr.2009
+* Initial (private) release

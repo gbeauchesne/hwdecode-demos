@@ -1,0 +1,42 @@
+  hwdecode-demos
+  Demo programs for HW accelerated video decoding
+
+  Copyright (C) 2009-2010 Splitted-Desktop Systems
+
+
+License
+-------
+
+hwdecode-demos is available under the terms of the GNU General Public
+License.
+
+
+Overview
+--------
+
+hwdecode-demos consists in simple test programs to address various HW
+video decoding APIs: Crystal HD, VA-API, VDPAU and XvBA.
+
+
+Requirements
+------------
+
+* libswscale and libavutil development packages are the minimal
+  requirements for all demos called with --getimage or --putimage
+  options.
+
+* For Crystal HD demos:
+  Crystal HD SDK from GIT, as of 2010/02/15
+
+* For VA-API demos:
+  libva >= 0.29.0-sds8 is required for 2D display.
+  libva >= 0.30.4-sds3 is required for 3D display.
+  That's the API version, not the version of the packages.
+
+* For VDPAU demos:
+  VDPAU SDK from any NVIDIA driver should fit as the source code uses
+  the bare initial API.
+
+* For XvBA demos:
+  XvBA SDK >= 0.73 is required for 2D display.
+  XvBA SDK >= 0.74 is required for 3D display.
