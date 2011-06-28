@@ -27,6 +27,7 @@
 
 #ifdef USE_VAAPI
 #include "vaapi.h"
+#include "vaapi_compat.h"
 #endif
 
 #define DEBUG 1
@@ -101,10 +102,17 @@ int common_init_decoder(unsigned int picture_width, unsigned int picture_height)
                       common->putimage_size.height);
 
     /* vaAssociateSubpicture() target region */
-    if (common->use_vaapi_subpicture_target_rect)
-        ensure_bounds(&common->vaapi_subpicture_target_rect,
-                      picture_width,
-                      picture_height);
+    if (common->use_vaapi_subpicture_target_rect) {
+        if (common->use_vaapi_subpicture_flags &&
+            (common->vaapi_subpicture_flags & VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD))
+            ensure_bounds(&common->vaapi_subpicture_target_rect,
+                          common->window_size.width,
+                          common->window_size.height);
+        else
+            ensure_bounds(&common->vaapi_subpicture_target_rect,
+                          picture_width,
+                          picture_height);
+    }
     return 0;
 }
 
@@ -244,6 +252,17 @@ static const map_t map_vaapi_putsurface_flags[] = {
 #endif
 #ifdef VA_FILTER_SCALING_NL_ANAMORPHIC
     { VA_FILTER_SCALING_NL_ANAMORPHIC,  "scaling_nla"           },
+#endif
+#endif
+    { 0, }
+};
+
+static const map_t map_vaapi_subpicture_flags[] = {
+#ifdef USE_VAAPI
+    { VA_SUBPICTURE_CHROMA_KEYING,                  "chroma-key"        },
+    { VA_SUBPICTURE_GLOBAL_ALPHA,                   "global-alpha"      },
+#ifdef VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD
+    { VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD,    "screen-coords"     },
 #endif
 #endif
     { 0, }
@@ -614,6 +633,11 @@ static const opt_t g_options[] = {
       "vaapi-subpicture-target-rect",
       "Specify vaAssociateSubpicture() target rectangle",
       STRUCT_VALUE_WITH_FLAG(rect, vaapi_subpicture_target_rect),
+    },
+    { /* Specify vaAssociateSubpicture() flags, separated by ':' */
+      "vaapi-subpicture-flags",
+      "Specify vaAssociateSubpicture() flags",
+      FLAGS_VALUE(vaapi_subpicture_flags, vaapi_subpicture_flags, 0),
     },
     { /* Render a single surface to multiple locations within the same window */
       /* DEPRECATED: use --multi-rendering */

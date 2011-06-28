@@ -55,6 +55,9 @@ typedef struct _VASliceParameterBufferBase {
 #ifndef VA_INVALID_SURFACE
 #define VA_INVALID_SURFACE      VA_INVALID_ID
 #endif
+#ifndef VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD
+#define VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD 0x0004
+#endif
 
 /* Compatibility glue with VA API >= 0.31 */
 #if VA_CHECK_VERSION(0,31,0)

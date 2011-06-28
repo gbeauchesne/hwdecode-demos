@@ -112,6 +112,8 @@ struct _CommonContext {
     Rectangle           vaapi_subpicture_source_rect;
     unsigned int        use_vaapi_subpicture_target_rect;
     Rectangle           vaapi_subpicture_target_rect;
+    unsigned int        use_vaapi_subpicture_flags;
+    unsigned int        vaapi_subpicture_flags;
     unsigned int        vaapi_putimage_scaled;
     unsigned int        use_vaapi_background_color;
     unsigned int        vaapi_background_color;

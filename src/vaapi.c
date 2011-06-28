@@ -1003,6 +1003,13 @@ static int blend_image(VASurfaceID surface, Image *img)
     }
     if (!subpic_format)
         goto end;
+
+    if (common->use_vaapi_subpicture_flags &&
+        ((common->vaapi_subpicture_flags ^ subpic_flags) & VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD) != 0) {
+        D(bug("driver does not support VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD flag\n"));
+        goto end;
+    }
+
     D(bug("selected %s subpicture format for putimage in blend mode\n",
           string_of_VAImageFormat(subpic_format)));
 
@@ -1064,6 +1071,10 @@ static int blend_image(VASurfaceID surface, Image *img)
     if (subpic_count_y == 0)
         subpic_count_y = 1;
 
+    subpic_flags = 0;
+    if (common->use_vaapi_subpicture_flags)
+        subpic_flags = common->vaapi_subpicture_flags;
+
     for (j = 0; j < subpic_count_y; j++) {
         subpic_count_x = subpic_count / subpic_count_y;
         if (j == subpic_count_y - 1)
@@ -1101,7 +1112,7 @@ static int blend_image(VASurfaceID surface, Image *img)
                 &surface, 1,
                 srect.x, srect.y, srect.width, srect.height,
                 drect.x, drect.y, drect.width, drect.height,
-                0
+                subpic_flags
             );
             if (!vaapi_check_status(status, "vaAssociateSubpicture()"))
                 goto end;
