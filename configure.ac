@@ -160,10 +160,11 @@ AC_SUBST(GLX_DEPS_LIBS)
 
 USE_GLX="no"
 if test "$enable_glx:$have_GLX" = "yes:yes"; then
-    if test "$have_GLU" = "no"; then
-        AC_MSG_ERROR([Cannot find GLU library])
+    if test "$have_GLU" = "yes"; then
+        USE_GLX="yes"
+    else
+        AC_MSG_WARN([Cannot find GLU library, disabling GLX support])
     fi
-    USE_GLX="yes"
 fi
 AM_CONDITIONAL(USE_GLX, test "$USE_GLX" = "yes")
 if test "$USE_GLX" = "yes"; then
