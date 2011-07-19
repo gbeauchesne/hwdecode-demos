@@ -76,8 +76,10 @@ static const char *string_of_VAEntrypoint(VAEntrypoint entrypoint)
         ENTRYPOINT(IDCT);
         ENTRYPOINT(MoComp);
         ENTRYPOINT(Deblocking);
+#if VA_CHECK_VERSION(0,32,0)
         ENTRYPOINT(EncSlice);
         ENTRYPOINT(EncPicture);
+#endif
 #undef ENTRYPOINT
     default: break;
     }
