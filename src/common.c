@@ -89,6 +89,7 @@ int common_init_decoder(unsigned int picture_width, unsigned int picture_height)
         common->putimage_size.height = picture_height;
     }
 
+#if USE_VAAPI
     /* vaPutSurface() source region */
     if (common->use_vaapi_putsurface_source_rect)
         ensure_bounds(&common->vaapi_putsurface_source_rect,
@@ -113,6 +114,7 @@ int common_init_decoder(unsigned int picture_width, unsigned int picture_height)
                           picture_width,
                           picture_height);
     }
+#endif
     return 0;
 }
 
