@@ -24,6 +24,12 @@ AC_DEFINE([HWDECODE_DEMOS_MINOR_VERSION], [hwdecode_demos_minor_version], [Minor
 AC_DEFINE([HWDECODE_DEMOS_MICRO_VERSION], [hwdecode_demos_micro_version], [Micro version of the driver])
 AC_DEFINE([HWDECODE_DEMOS_PRE_VERSION], [hwdecode_demos_pre_version], [Preversion of the driver])
 
+dnl Use pretty build output with automake >= 1.11
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])], [
+  AM_DEFAULT_VERBOSITY=1
+  AC_SUBST(AM_DEFAULT_VERBOSITY)
+])
+
 AC_ARG_ENABLE(ffmpeg,
               AC_HELP_STRING([--enable-ffmpeg],
                              [enable FFmpeg @<:@default=yes@:>@]),
