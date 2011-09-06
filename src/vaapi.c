@@ -836,7 +836,7 @@ static int put_image(VASurfaceID surface, Image *img)
     VAImage va_image;
     VAStatus status;
     Image bound_image;
-    int i, w, h, is_bound_image = 0, error = -1;
+    int i, w, h, is_bound_image = 0, is_derived_image = 0, error = -1;
 
     va_image.image_id = VA_INVALID_ID;
     va_image.buf      = VA_INVALID_ID;
@@ -845,6 +845,20 @@ static int put_image(VASurfaceID surface, Image *img)
         uint32_t fourcc = get_vaapi_format(common->putimage_format);
         if (!fourcc || !get_image_format(vaapi, fourcc, &va_image_format))
             goto end;
+    }
+
+    if (!va_image_format) {
+        status = vaDeriveImage(vaapi->display, surface, &va_image);
+        if (vaapi_check_status(status, "vaDeriveImage()")) {
+            if (va_image.image_id != VA_INVALID_ID && va_image.buf != VA_INVALID_ID) {
+                D(bug("using vaDeriveImage()\n"));
+                is_derived_image = 1;
+                va_image_format = &va_image.format;
+            }
+            else {
+                D(bug("vaDeriveImage() returned success but VA image is invalid. Trying vaPutImage()\n"));
+            }
+        }
     }
 
     if (!va_image_format) {
@@ -870,11 +884,13 @@ static int put_image(VASurfaceID surface, Image *img)
         h = vaapi->picture_height;
     }
 
-    status = vaCreateImage(vaapi->display, va_image_format, w, h, &va_image);
-    if (!vaapi_check_status(status, "vaCreateImage()"))
-        goto end;
-    D(bug("created image with id 0x%08x and buffer id 0x%08x\n",
-          va_image.image_id, va_image.buf));
+    if (!is_derived_image) {
+        status = vaCreateImage(vaapi->display, va_image_format, w, h, &va_image);
+        if (!vaapi_check_status(status, "vaCreateImage()"))
+            goto end;
+        D(bug("created image with id 0x%08x and buffer id 0x%08x\n",
+              va_image.image_id, va_image.buf));
+    }
 
     if (bind_image(&va_image, &bound_image) < 0)
         goto end;
