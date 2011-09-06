@@ -102,6 +102,7 @@ struct _CommonContext {
 
     unsigned int        use_clipping;
     unsigned int        multi_rendering;
+    unsigned int        vaapi_derive_image;
     unsigned int        use_vaapi_putsurface_source_rect;
     Rectangle           vaapi_putsurface_source_rect;
     unsigned int        use_vaapi_putsurface_target_rect;

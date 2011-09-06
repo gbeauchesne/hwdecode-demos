@@ -611,6 +611,11 @@ static const opt_t g_options[] = {
       BOOL_VALUE(multi_rendering),
     },
 #if USE_VAAPI
+    { /* Allow use of vaDeriveImage() in GetImage or PutImage tests */
+      "vaapi-derive-image",
+      "Allow use of vaDeriveImage() in GetInmage or PutImage tests (default)",
+      BOOL_VALUE(vaapi_derive_image),
+    },
     { /* Specify vaPutSurface() source rectangle */
       "vaapi-putsurface-source-rect",
       "Specify vaPutSurface() source rectangle",
@@ -945,6 +950,7 @@ int main(int argc, char *argv[])
     int i, is_error = 1;
 
     /* Option defaults */
+    common->vaapi_derive_image          = 1;
     common->vaapi_glx_use_copy          = 1;
     common->glx_texture_target          = TEXTURE_TARGET_2D;
     common->glx_texture_format          = IMAGE_BGRA;

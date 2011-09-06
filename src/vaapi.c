@@ -727,7 +727,7 @@ static int get_image(VASurfaceID surface, Image *dst_img)
             goto end;
     }
 
-    if (!image_format) {
+    if (!image_format && common->vaapi_derive_image) {
         status = vaDeriveImage(vaapi->display, surface, &image);
         if (vaapi_check_status(status, "vaDeriveImage()")) {
             if (image.image_id != VA_INVALID_ID && image.buf != VA_INVALID_ID) {
@@ -847,7 +847,7 @@ static int put_image(VASurfaceID surface, Image *img)
             goto end;
     }
 
-    if (!va_image_format) {
+    if (!va_image_format && common->vaapi_derive_image) {
         status = vaDeriveImage(vaapi->display, surface, &va_image);
         if (vaapi_check_status(status, "vaDeriveImage()")) {
             if (va_image.image_id != VA_INVALID_ID && va_image.buf != VA_INVALID_ID) {
