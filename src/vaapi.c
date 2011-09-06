@@ -873,18 +873,18 @@ static int put_image(VASurfaceID surface, Image *img)
     D(bug("selected %s image format for putimage in override mode\n",
           string_of_VAImageFormat(va_image_format)));
 
-    if (common->vaapi_putimage_scaled) {
-        /* Let vaPutImage() scale the image, though only a very few
-           drivers support that */
-        w = img->width;
-        h = img->height;
-    }
-    else {
-        w = vaapi->picture_width;
-        h = vaapi->picture_height;
-    }
-
     if (!is_derived_image) {
+        if (common->vaapi_putimage_scaled) {
+            /* Let vaPutImage() scale the image, though only a very few
+               drivers support that */
+            w = img->width;
+            h = img->height;
+        }
+        else {
+            w = vaapi->picture_width;
+            h = vaapi->picture_height;
+        }
+
         status = vaCreateImage(vaapi->display, va_image_format, w, h, &va_image);
         if (!vaapi_check_status(status, "vaCreateImage()"))
             goto end;
@@ -901,11 +901,13 @@ static int put_image(VASurfaceID surface, Image *img)
     if (release_image(&va_image) < 0)
         goto end;
 
-    status = vaPutImage2(vaapi->display, surface, va_image.image_id,
-                         0, 0, va_image.width, va_image.height,
-                         0, 0, vaapi->picture_width, vaapi->picture_height);
-    if (!vaapi_check_status(status, "vaPutImage()"))
-        goto end;
+    if (!is_derived_image) {
+        status = vaPutImage2(vaapi->display, surface, va_image.image_id,
+                             0, 0, va_image.width, va_image.height,
+                             0, 0, vaapi->picture_width, vaapi->picture_height);
+        if (!vaapi_check_status(status, "vaPutImage()"))
+            goto end;
+    }
     error = 0;
 end:
     if (is_bound_image) {
