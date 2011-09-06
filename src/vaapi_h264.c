@@ -95,6 +95,7 @@ int decode(void)
     NEW(COPY_BFM(pic_fields, bits, pic_order_present_flag));
     NEW(COPY_BFM(pic_fields, bits, deblocking_filter_control_present_flag));
     NEW(COPY_BFM(pic_fields, bits, redundant_pic_cnt_present_flag));
+    NEW(COPY_BFM(pic_fields, bits, reference_pic_flag));
     pic_param->frame_num = 0;
     pic_param->CurrPic.picture_id = vaapi->surface_id;
     pic_param->CurrPic.TopFieldOrderCnt = 0;
