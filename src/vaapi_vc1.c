@@ -82,6 +82,9 @@ int decode(void)
     NEW(COPY_BFM(sequence_fields, bits, multires));
     NEW(COPY_BFM(sequence_fields, bits, rangered));
     NEW(COPY_BFM(sequence_fields, bits, max_b_frames));
+#if VA_CHECK_VERSION(0,32,0)
+    pic_param->BFM(sequence_fields, bits, profile) = vc1_pic_info.profile;
+#endif
     pic_param->coded_width = vc1_pic_info.width;
     pic_param->coded_height = vc1_pic_info.height;
     NEW(pic_param->BFV(entrypoint_fields, value) = 0); /* reset all bits */
