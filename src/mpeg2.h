@@ -63,6 +63,7 @@ struct _MPEG2SliceInfo {
     unsigned int        slice_data_size;
     unsigned int        slice_data_offset;
     unsigned int        macroblock_offset;
+    unsigned int        slice_horizontal_position;
     unsigned int        slice_vertical_position;
     int                 quantiser_scale_code;
     int                 intra_slice_flag;

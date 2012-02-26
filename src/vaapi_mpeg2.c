@@ -106,6 +106,9 @@ int decode(void)
 
 #define COPY(field) slice_param->field = mpeg2_slice_info.field
         COPY(macroblock_offset);
+#if VA_CHECK_VERSION(0,32,0)
+        COPY(slice_horizontal_position);
+#endif
         COPY(slice_vertical_position);
         COPY(quantiser_scale_code);
         COPY(intra_slice_flag);
