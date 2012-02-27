@@ -55,6 +55,7 @@ static const char *string_of_VAProfile(VAProfile profile)
         PROFILE(MPEG4AdvancedSimple);
         PROFILE(MPEG4Main);
 #if VA_CHECK_VERSION(0,32,0)
+        PROFILE(JPEGBaseline);
         PROFILE(H263Baseline);
         PROFILE(H264ConstrainedBaseline);
 #endif
