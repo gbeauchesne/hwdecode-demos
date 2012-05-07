@@ -256,14 +256,14 @@ int vaapi_exit(void)
         }
     }
 
-    if (vaapi->surface_id) {
-        vaDestroySurfaces(vaapi->display, &vaapi->surface_id, 1);
-        vaapi->surface_id = 0;
-    }
-
     if (vaapi->context_id) {
         vaDestroyContext(vaapi->display, vaapi->context_id);
         vaapi->context_id = 0;
+    }
+
+    if (vaapi->surface_id) {
+        vaDestroySurfaces(vaapi->display, &vaapi->surface_id, 1);
+        vaapi->surface_id = 0;
     }
 
     if (vaapi->config_id) {
