@@ -30,6 +30,9 @@
 #if LIBAVFORMAT_VERSION_INT < ((52<<16)+(3<<8)+0) /* 52.3.0 */
 # define av_close_input_stream av_close_input_file
 #endif
+#if LIBAVCODEC_VERSION_INT < ((52<<16)+(64<<8)+0) /* 52.64.0 */
+# define AVMEDIA_TYPE_VIDEO CODEC_TYPE_VIDEO
+#endif
 
 #if USE_H264
 #include "h264.h"
@@ -96,7 +99,7 @@ int decode(void)
 
     video_stream = NULL;
     for (i = 0; i < ic->nb_streams; i++) {
-        if (ic->streams[i]->codec->codec_type == CODEC_TYPE_VIDEO && !video_stream)
+        if (ic->streams[i]->codec->codec_type == AVMEDIA_TYPE_VIDEO && !video_stream)
             video_stream = ic->streams[i];
         else
             ic->streams[i]->discard = AVDISCARD_ALL;

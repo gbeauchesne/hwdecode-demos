@@ -194,9 +194,14 @@ int ffmpeg_decode(AVCodecContext *avctx, const uint8_t *buf, unsigned int buf_si
     CommonContext * const common = common_get_context();
     FFmpegContext * const ffmpeg = ffmpeg_get_context();
     int got_picture;
+    AVPacket pkt;
+
+    av_init_packet(&pkt);
+    pkt.data = buf;
+    pkt.size = buf_size;
 
     got_picture = 0;
-    if (avcodec_decode_video(avctx, ffmpeg->frame, &got_picture, (uint8_t *)buf, buf_size) < 0)
+    if (avcodec_decode_video2(avctx, ffmpeg->frame, &got_picture, &pkt) < 0)
         return -1;
 
     if (got_picture && hwaccel_type() == HWACCEL_NONE) {
