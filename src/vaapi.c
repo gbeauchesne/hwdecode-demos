@@ -101,7 +101,9 @@ static const char *string_of_VADisplayAttribType(VADisplayAttribType type)
         TYPE(Hue);
         TYPE(Saturation);
         TYPE(BackgroundColor);
+#if !VA_CHECK_VERSION(0,34,0)
         TYPE(DirectSurface);
+#endif
 #undef TYPE
     default: break;
     }

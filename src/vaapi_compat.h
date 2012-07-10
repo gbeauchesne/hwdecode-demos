@@ -94,4 +94,9 @@ typedef struct _VASliceParameterBufferBase {
       (VA_MINOR_VERSION == 31 &&                          \
        VA_MICRO_VERSION == 0 && VA_SDS_VERSION < 5)))
 
+#if VA_CHECK_VERSION(0,34,0)
+/* New vaCreateSurfaces() API with surface attributes */
+# include <va/va_compat.h>
+#endif
+
 #endif /* VAAPI_COMPAT_H */
