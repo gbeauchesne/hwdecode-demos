@@ -144,33 +144,39 @@ AC_SUBST(X11_DEPS_CFLAGS)
 AC_SUBST(X11_DEPS_LIBS)
 
 dnl Check for OpenGL
-AC_CHECK_HEADERS([GL/glx.h])
-AC_CHECK_HEADERS([GL/gl.h GL/glu.h])
+HAVE_GL="no"
+HAVE_GLU="no"
+PKG_CHECK_MODULES(GL_DEPS,  [gl],  [HAVE_GL="yes"],  [HAVE_GL="no"])
+if test "$HAVE_GL" = "yes"; then
+    saved_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $GL_DEPS_CFLAGS"
+    AC_CHECK_HEADERS([GL/gl.h], [:], [HAVE_GL="no"])
+    CPPFLAGS="$saved_CPPFLAGS"
+fi
 
-GLX_DEPS_CFLAGS=""
-GLX_DEPS_LIBS=""
+dnl Check for GLU
+HAVE_GLU="no"
+PKG_CHECK_MODULES(GLU_DEPS, [glu], [HAVE_GLU="yes"], [HAVE_GLU="no"])
+if test "$HAVE_GLU" = "yes"; then
+    saved_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $GLU_DEPS_CFLAGS"
+    AC_CHECK_HEADERS([GL/glu.h], [:], [HAVE_GLU="no"])
+    CPPFLAGS="$saved_CPPFLAGS"
+fi
 
-have_GLX="no"
-AC_CHECK_LIB(GL, glXCreateContext, [
-    GLX_DEPS_LIBS="$GLX_DEPS_LIBS -lX11 -lGL"
-    have_GLX="yes"
-])
-
-have_GLU="no"
-AC_CHECK_LIB(GLU, gluPerspective, [
-    GLX_DEPS_LIBS="$GLX_DEPS_LIBS -lGLU"
-    have_GLU="yes"
-])
-AC_SUBST(GLX_DEPS_CFLAGS)
-AC_SUBST(GLX_DEPS_LIBS)
-
+dnl Check for GLX
 USE_GLX="no"
-if test "$enable_glx:$have_GLX" = "yes:yes"; then
-    if test "$have_GLU" = "yes"; then
-        USE_GLX="yes"
-    else
-        AC_MSG_WARN([Cannot find GLU library, disabling GLX support])
-    fi
+if test "$enable_glx" = "yes" -a "$HAVE_GL:$HAVE_GLU" = "yes:yes"; then
+    saved_CPPFLAGS="$CPPFLAGS"
+    saved_LIBS="$LIBS"
+    CPPFLAGS="$CPPFLAGS $GL_DEPS_CFLAGS $GLU_DEPS_CFLAGS $X11_DEPS_CFLAGS"
+    LIBS="$LIBS $GL_DEPS_LIBS $GLU_DEPS_LIBS $X11_DEPS_LIBS"
+    USE_GLX="yes"
+    AC_CHECK_HEADERS([GL/glx.h], [:], [USE_GLX="no"])
+    AC_CHECK_LIB([GL], [glXCreateContext], [:], [USE_GLX="no"])
+    AC_CHECK_LIB([GLU], [gluPerspective], [:], [USE_GLX="no"])
+    CPPFLAGS="$saved_CPPFLAGS"
+    LIBS="$saved_LIBS"
 fi
 AM_CONDITIONAL(USE_GLX, test "$USE_GLX" = "yes")
 if test "$USE_GLX" = "yes"; then

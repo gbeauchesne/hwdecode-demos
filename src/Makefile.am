@@ -46,14 +46,13 @@ bin_PROGRAMS =		\
 x11_display_SOURCES	= x11.c utils_x11.c
 glx_display_SOURCES	= glx.c utils_glx.c
 
-if USE_GLX
-display_SOURCES		= $(x11_display_SOURCES) $(glx_display_SOURCES)
-display_CFLAGS		= $(GLX_DEPS_CFLAGS)
-display_LIBS		= $(GLX_DEPS_LIBS)
-else
 display_SOURCES		= $(x11_display_SOURCES)
 display_CFLAGS		= $(X11_DEPS_CFLAGS)
 display_LIBS		= $(X11_DEPS_LIBS)
+if USE_GLX
+display_SOURCES		+= $(glx_display_SOURCES)
+display_CFLAGS		+= $(GL_DEPS_CFLAGS) $(GLU_DEPS_CFLAGS)
+display_LIBS		+= $(GL_DEPS_LIBS) $(GLU_DEPS_LIBS)
 endif
 
 if USE_VAAPI
