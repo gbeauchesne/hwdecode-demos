@@ -85,7 +85,6 @@ int decode(void)
         format = av_find_input_format(FORCE_VIDEO_FORMAT);
     if (!format && (format = av_probe_input_format(&pd, 1)) == NULL)
         goto end;
-    format->flags |= AVFMT_NOFILE;
 
     if (init_put_byte(&ioctx, (uint8_t *)video_data, video_data_size, 0, NULL, NULL, NULL, NULL) < 0)
         goto end;
