@@ -53,6 +53,7 @@ static CommonContext g_common_context = {
     .display_type       = DISPLAY_X11,
     .window_size.width  = 640,
     .window_size.height = 480,
+    .rotation           = ROTATION_NONE,
     .genimage_type      = GENIMAGE_AUTO,
     .getimage_mode      = GETIMAGE_NONE,
     .getimage_format    = 0,
@@ -173,6 +174,14 @@ static const map_t map_display_types[] = {
 #if USE_GLX
     { DISPLAY_GLX,              "glx"           },
 #endif
+    { 0, }
+};
+
+static const map_t map_rotation_modes[] = {
+    { ROTATION_NONE,            "none"          },
+    { ROTATION_90,              "90"            },
+    { ROTATION_180,             "180"           },
+    { ROTATION_270,             "270"           },
     { 0, }
 };
 
@@ -549,6 +558,11 @@ static const opt_t g_options[] = {
       "subwindow-rect",
       "Specify the location and size of the child window",
       STRUCT_VALUE_WITH_FLAG(rect, subwindow_rect),
+    },
+    { /* Select the display rotation mode: 0 ("none"), 90, 180, 270 */
+      "rotation",
+      "Select the rotation mode",
+      ENUM_VALUE(rotation, rotation_modes, ROTATION_NONE),
     },
     { /* Select type of generated image: "rects", "rgb-rects", "flowers" */
       "genimage",

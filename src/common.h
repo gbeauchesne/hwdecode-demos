@@ -35,6 +35,13 @@ enum DisplayType {
     DISPLAY_GLX
 };
 
+enum RotationMode {
+    ROTATION_NONE = 0,
+    ROTATION_90,
+    ROTATION_180,
+    ROTATION_270
+};
+
 enum GenImageType {
     GENIMAGE_AUTO = 0,  /* automatic selection   */
     GENIMAGE_RECTS,     /* random rectangles     */
@@ -84,6 +91,7 @@ struct _CommonContext {
     Size                window_size;
     unsigned int        use_subwindow_rect;
     Rectangle           subwindow_rect;
+    enum RotationMode   rotation;
 
     Image              *image;
     enum GenImageType   genimage_type;

@@ -32,6 +32,8 @@ typedef struct _VAAPIContext VAAPIContext;
 
 struct _VAAPIContext {
     VADisplay           display;
+    VADisplayAttribute *display_attrs;
+    int                 n_display_attrs;
     VAConfigID          config_id;
     VAContextID         context_id;
     VASurfaceID         surface_id;

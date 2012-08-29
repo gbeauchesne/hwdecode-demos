@@ -104,6 +104,9 @@ static const char *string_of_VADisplayAttribType(VADisplayAttribType type)
 #if !VA_CHECK_VERSION(0,34,0)
         TYPE(DirectSurface);
 #endif
+#if VA_CHECK_VERSION(0,32,0)
+        TYPE(Rotation);
+#endif
 #undef TYPE
     default: break;
     }
@@ -121,38 +124,87 @@ static void destroy_buffers(VADisplay display, VABufferID *buffers, unsigned int
     }
 }
 
+static bool
+has_display_attribute(VADisplayAttribType type)
+{
+    VAAPIContext * const vaapi = vaapi_get_context();
+    int i;
+
+    if (vaapi->display_attrs) {
+        for (i = 0; i < vaapi->n_display_attrs; i++) {
+            if (vaapi->display_attrs[i].type == type)
+                return true;
+        }
+    }
+    return false;
+}
+
+#if 0
+static bool
+get_display_attribute(VADisplayAttribType type, int *pvalue)
+{
+    VAAPIContext * const vaapi = vaapi_get_context();
+    VADisplayAttribute attr;
+    VAStatus status;
+
+    attr.type  = type;
+    attr.flags = VA_DISPLAY_ATTRIB_GETTABLE;
+    status = vaGetDisplayAttributes(vaapi->display, &attr, 1);
+    if (!vaapi_check_status(status, "vaGetDisplayAttributes()"))
+        return false;
+
+    if (pvalue)
+        *pvalue = attr.value;
+    return true;
+}
+#endif
+
+static bool
+set_display_attribute(VADisplayAttribType type, int value)
+{
+    VAAPIContext * const vaapi = vaapi_get_context();
+    VADisplayAttribute attr;
+    VAStatus status;
+
+    attr.type  = type;
+    attr.value = value;
+    attr.flags = VA_DISPLAY_ATTRIB_SETTABLE;
+    status = vaSetDisplayAttributes(vaapi->display, &attr, 1);
+    if (!vaapi_check_status(status, "vaSetDisplayAttributes()"))
+        return false;
+    return true;
+}
+
 int vaapi_init(VADisplay display)
 {
     CommonContext * common = common_get_context();
     VAAPIContext *vaapi;
     int major_version, minor_version;
     int i, num_display_attrs, max_display_attrs;
-    VADisplayAttribute *display_attrs;
+    VADisplayAttribute *display_attrs = NULL;
     VAStatus status;
 
     if (vaapi_context)
         return 0;
 
     if (!display)
-        return -1;
+        goto error;
     D(bug("VA display %p\n", display));
 
     status = vaInitialize(display, &major_version, &minor_version);
     if (!vaapi_check_status(status, "vaInitialize()"))
-        return -1;
+        goto error;
     D(bug("VA API version %d.%d\n", major_version, minor_version));
 
     max_display_attrs = vaMaxNumDisplayAttributes(display);
     display_attrs = malloc(max_display_attrs * sizeof(display_attrs[0]));
     if (!display_attrs)
-        return -1;
+        goto error;
 
     num_display_attrs = 0; /* XXX: workaround old GMA500 bug */
     status = vaQueryDisplayAttributes(display, display_attrs, &num_display_attrs);
-    if (!vaapi_check_status(status, "vaQueryDisplayAttributes()")) {
-        free(display_attrs);
-        return -1;
-    }
+    if (!vaapi_check_status(status, "vaQueryDisplayAttributes()"))
+        goto error;
     D(bug("%d display attributes available\n", num_display_attrs));
     for (i = 0; i < num_display_attrs; i++) {
         VADisplayAttribute * const display_attr = &display_attrs[i];
@@ -164,7 +216,6 @@ int vaapi_init(VADisplay display)
               display_attr->max_value,
               display_attr->value));
     }
-    free(display_attrs);
 
     if (common->use_vaapi_background_color) {
         VADisplayAttribute attr;
@@ -172,18 +223,41 @@ int vaapi_init(VADisplay display)
         attr.value = common->vaapi_background_color;
         status = vaSetDisplayAttributes(display, &attr, 1);
         if (!vaapi_check_status(status, "vaSetDisplayAttributes()"))
-            return -1;
+            goto error;
     }
 
     if ((vaapi = calloc(1, sizeof(*vaapi))) == NULL)
-        return -1;
+        goto error;
     vaapi->display               = display;
     vaapi->subpic_image.image_id = VA_INVALID_ID;
     for (i = 0; i < ARRAY_ELEMS(vaapi->subpic_ids); i++)
         vaapi->subpic_ids[i]     = VA_INVALID_ID;
+    vaapi->display_attrs         = display_attrs;
+    vaapi->n_display_attrs       = num_display_attrs;
 
     vaapi_context = vaapi;
+
+    if (common->rotation != ROTATION_NONE) {
+        if (!has_display_attribute(VADisplayAttribRotation))
+            printf("VAAPI: display rotation attribute is not supported\n");
+        else {
+            int rotation;
+            switch (common->rotation) {
+            case ROTATION_NONE: rotation = VA_ROTATION_NONE; break;
+            case ROTATION_90:   rotation = VA_ROTATION_90;   break;
+            case ROTATION_180:  rotation = VA_ROTATION_180;  break;
+            case ROTATION_270:  rotation = VA_ROTATION_270;  break;
+            default:            ASSERT(0 && "unsupported rotation mode");
+            }
+            if (!set_display_attribute(VADisplayAttribRotation, rotation))
+                return -1;
+        }
+    }
     return 0;
+
+error:
+    free(display_attrs);
+    return -1;
 }
 
 int vaapi_exit(void)
@@ -271,6 +345,12 @@ int vaapi_exit(void)
     if (vaapi->config_id) {
         vaDestroyConfig(vaapi->display, vaapi->config_id);
         vaapi->config_id = 0;
+    }
+
+    if (vaapi->display_attrs) {
+        free(vaapi->display_attrs);
+        vaapi->display_attrs = NULL;
+        vaapi->n_display_attrs = 0;
     }
 
     if (vaapi->display) {
