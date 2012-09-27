@@ -29,6 +29,13 @@
 #include <GL/glext.h>
 #undef GLXContext
 
+#if GL_GLEXT_VERSION >= 85
+/* XXX: PFNGLMULTITEXCOORD2FPROC got out of the GL_VERSION_1_3_DEPRECATED
+   block and is not defined if GL_VERSION_1_3 is defined in <GL/gl.h>
+   Redefine the type here as an interim solution */
+typedef void (*PFNGLMULTITEXCOORD2FPROC) (GLenum target, GLfloat s, GLfloat t);
+#endif
+
 /* Define missing types for GLX_EXT_texture_from_pixmap */
 #if GLX_GLXEXT_VERSION < 18
 typedef void (*PFNGLXBINDTEXIMAGEEXTPROC)(Display *, GLXDrawable, int, const int *);
