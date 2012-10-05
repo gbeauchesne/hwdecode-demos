@@ -18,12 +18,15 @@
  *  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#define _GNU_SOURCE 1 /* strtof_l() */
 #include "sysdeps.h"
 #include "common.h"
 #include "utils.h"
 #include <strings.h> /* strcasecmp() [POSIX.1-2001] */
 #include <stddef.h>
 #include <stdarg.h>
+#include <locale.h>
+#include <errno.h>
 
 #ifdef USE_VAAPI
 #include "vaapi.h"
@@ -336,6 +339,7 @@ static void append_cliprect(int x, int y, unsigned int w, unsigned int h)
 
 typedef enum {
     OPT_TYPE_UINT = 1,
+    OPT_TYPE_FLOAT,
     OPT_TYPE_ENUM,
     OPT_TYPE_STRUCT,
     OPT_TYPE_FLAGS, /* separator is ':' */
@@ -420,6 +424,30 @@ static int get_color(const char *arg, unsigned int *pcolor, unsigned int *pflag)
     return -1;
 }
 
+static int opt_subparse_float(const char *arg, const opt_t *opt)
+{
+    float * const pval = opt->var;
+    float v;
+    char *end_ptr;
+
+    static locale_t C_locale = NULL;
+
+    if (!C_locale) {
+        C_locale = newlocale(LC_ALL_MASK, "C", NULL);
+        if (!C_locale)
+            return -1;
+    }
+
+    assert(pval);
+
+    errno = 0;
+    v = strtof_l(arg, &end_ptr, C_locale);
+    if (end_ptr == arg || errno == ERANGE)
+        return -1;
+    *pval = v;
+    return 0;
+}
+
 static int opt_subparse_size(const char *arg, const opt_t *opt)
 {
     return get_size(arg, opt->var, opt->varflag);
@@ -500,6 +528,11 @@ static int opt_subparse_flags(const char *arg, const opt_t *opt)
 #define BOOL_VALUE(VAR)                         \
     UINT_VALUE(VAR, 1),                         \
     .flags         = OPT_FLAG_NEGATE
+
+#define FLOAT_VALUE(VAR, VALUE)                 \
+    .type          = OPT_TYPE_FLOAT,            \
+    .var           = &g_common_context.VAR,     \
+    .value         = VALUE
 
 #define ENUM_VALUE(VAR, MAP, VALUE)             \
     .type          = OPT_TYPE_ENUM,             \
@@ -756,6 +789,7 @@ static const opt_t g_options[] = {
 };
 
 #undef UINT_VALUE
+#undef FLOAT_VALUE
 #undef ENUM_VALUE
 #undef STRUCT_VALUE
 #undef STRUCT_VALUE_RAW
@@ -833,6 +867,9 @@ static void show_help(const char *prog)
         case OPT_TYPE_UINT:
             if (o->flags & OPT_FLAG_NEGATE)
                 printf("bool");
+            break;
+        case OPT_TYPE_FLOAT:
+            printf("float");
             break;
         case OPT_TYPE_ENUM:
             printf("enum");
@@ -916,6 +953,12 @@ static int options_parse(int argc, char *argv[])
                     case OPT_TYPE_UINT:
                         assert(pval);
                         *pval = opt->value;
+                        break;
+                    case OPT_TYPE_FLOAT:
+                        assert(pval);
+                        if (++i >= argc || opt_subparse_float(argv[i], opt) < 0)
+                            error("could not parse %s argument", arg);
+                        break;
                         break;
                     case OPT_TYPE_ENUM:
                         assert(pval);
