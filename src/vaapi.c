@@ -1111,10 +1111,29 @@ static int blend_image(VASurfaceID surface, Image *img)
     if (!subpic_format)
         goto end;
 
-    if (common->use_vaapi_subpicture_flags &&
-        ((common->vaapi_subpicture_flags ^ subpic_flags) & VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD) != 0) {
-        D(bug("driver does not support VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD flag\n"));
-        goto end;
+    if (common->use_vaapi_subpicture_flags) {
+        static const struct {
+            unsigned int flags;
+            const char *name;
+        } g_flags[] = {
+            { VA_SUBPICTURE_GLOBAL_ALPHA,
+              "VA_SUBPICTURE_GLOBAL_ALPHA" },
+#ifdef VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD
+            { VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD,
+              "VA_SUBPICTURE_DESTINATION_IS_SCREEN_COORD" },
+#endif
+            { 0, }
+        };
+        const unsigned int flags =
+            common->vaapi_subpicture_flags ^ subpic_flags;
+
+        for (i = 0; g_flags[i].flags != 0; i++) {
+            if (flags & g_flags[i].flags) {
+                D(bug("driver does not support %s subpicture flag\n",
+                      g_flags[i].name));
+                goto end;
+            }
+        }
     }
 
     D(bug("selected %s subpicture format for putimage in blend mode\n",
@@ -1149,6 +1168,19 @@ static int blend_image(VASurfaceID surface, Image *img)
         if (!vaapi_check_status(status, "vaCreateSubpicture()"))
             goto end;
         D(bug("created subpicture with id 0x%08x\n", vaapi->subpic_ids[i]));
+
+        if (common->use_vaapi_subpicture_flags) {
+
+            if (common->vaapi_subpicture_flags & VA_SUBPICTURE_GLOBAL_ALPHA) {
+                status = vaSetSubpictureGlobalAlpha(
+                    vaapi->display,
+                    vaapi->subpic_ids[i],
+                    common->vaapi_subpicture_alpha
+                );
+                if (!vaapi_check_status(status, "vaSetSubpictureGlobalAlpha()"))
+                    goto end;
+            }
+        }
     }
 
     if (common->use_vaapi_subpicture_source_rect)

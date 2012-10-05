@@ -693,6 +693,11 @@ static const opt_t g_options[] = {
       "Specify vaAssociateSubpicture() flags",
       FLAGS_VALUE(vaapi_subpicture_flags, vaapi_subpicture_flags, 0),
     },
+    { /* Specify vaSetSubpictureGlobalAlpha() value */
+      "vaapi-subpicture-alpha",
+      "Specify vaSetSubpictureGlobalAlpha() value",
+      FLOAT_VALUE(vaapi_subpicture_alpha, 1.0),
+    },
     { /* Render a single surface to multiple locations within the same window */
       /* DEPRECATED: use --multi-rendering */
       "vaapi-multirendering",
@@ -1009,6 +1014,7 @@ int main(int argc, char *argv[])
     /* Option defaults */
     common->vaapi_derive_image          = 1;
     common->vaapi_glx_use_copy          = 1;
+    common->vaapi_subpicture_alpha      = 1.0;
     common->glx_texture_target          = TEXTURE_TARGET_2D;
     common->glx_texture_format          = IMAGE_BGRA;
     common->glx_use_fbo                 = 0;
