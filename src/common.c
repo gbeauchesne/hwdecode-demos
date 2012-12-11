@@ -597,6 +597,11 @@ static const opt_t g_options[] = {
       "Select the windowing system",
       ENUM_VALUE(display_type, display_types, 0),
     },
+    { /* Specify the output file name */
+      "output",
+      "Specify the output file name",
+      STRING_VALUE(output_filename),
+    },
     { /* Allow rendering of the decoded video frame into a child window */
       "subwindow",
       "Allow rendering of the decoded video frame into a child window",
@@ -1154,6 +1159,14 @@ int main(int argc, char *argv[])
         goto end;
     }
 
+    if (common->output_filename) {
+        common->output_file = fopen(common->output_filename, "wb");
+        if (!common->output_file) {
+            fprintf(stderr, "ERROR: output file creation failed");
+            goto end;
+        }
+    }
+
     if (pre() < 0) {
         fprintf(stderr, "ERROR: initialization failed\n");
         goto end;
@@ -1162,6 +1175,13 @@ int main(int argc, char *argv[])
     if (decode() < 0) {
         fprintf(stderr, "ERROR: decode failed\n");
         goto end;
+    }
+
+    if (common->output_file && getimage_mode() == GETIMAGE_FROM_VIDEO) {
+        if (image_write(common->image, common->output_file) < 0) {
+            fprintf(stderr, "ERROR: image write failed\n");
+            goto end;
+        }
     }
 
     if (display() < 0) {
@@ -1176,6 +1196,8 @@ int main(int argc, char *argv[])
 
     is_error = 0;
 end:
+    if (common->output_file)
+        fclose(common->output_file);
     free(common->cliprects);
     image_destroy(common->cliprects_image);
     image_destroy(common->image);

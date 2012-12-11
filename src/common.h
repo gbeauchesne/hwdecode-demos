@@ -94,6 +94,9 @@ struct _CommonContext {
     Rectangle           subwindow_rect;
     enum RotationMode   rotation;
 
+    FILE               *output_file;
+    char               *output_filename;
+
     Image              *image;
     enum GenImageType   genimage_type;
     enum GetImageMode   getimage_mode;

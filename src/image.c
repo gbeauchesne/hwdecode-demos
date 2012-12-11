@@ -858,3 +858,34 @@ int image_convert(Image *dst_img, Image *src_img)
                            dst_img->height,
                            dst_img->format);
 }
+
+int image_write(Image *img, FILE *fp)
+{
+    unsigned int x, y, src_stride;
+    const uint32_t *src;
+    uint8_t rgb_pixel[3];
+
+    D(bug("write %s:%ux%u\n",
+          string_of_FOURCC(img->format), img->width, img->height));
+
+    if (img->format != IMAGE_RGB32)
+        return -1;
+
+    src = (uint32_t *)img->pixels[0];
+    src_stride = img->pitches[0] / 4;
+
+    /* PPM format */
+    fprintf(fp, "P6\n%u %u\n255\n", img->width, img->height);
+    for (y = 0; y < img->height; y++) {
+        for (x = 0; x < img->width; x++) {
+            const uint32_t color = src[x];
+            rgb_pixel[0] = color >> 16;
+            rgb_pixel[1] = color >> 8;
+            rgb_pixel[2] = color & 0xff;
+            if (fwrite(rgb_pixel, sizeof(rgb_pixel), 1, fp) != 1)
+                return -1;
+        }
+        src += src_stride;
+    }
+    return 0;
+}

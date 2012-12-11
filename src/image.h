@@ -101,4 +101,7 @@ uint32_t image_rgba_format(
 
 void image_draw_rectangle(Image *img, int x, int y, int w, int h, uint32_t c);
 
+// Write image to file (PPM format)
+int image_write(Image *img, FILE *fp);
+
 #endif /* IMAGE_H */
