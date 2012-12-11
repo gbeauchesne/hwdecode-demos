@@ -55,9 +55,11 @@ display_SOURCES		+= vo_drm.c
 display_CFLAGS		+= $(DRM_CFLAGS) $(UDEV_CFLAGS)
 display_LIBS		+= $(DRM_LIBS) $(UDEV_LIBS)
 endif
+if USE_X11
 display_SOURCES		+= $(x11_display_SOURCES)
 display_CFLAGS		+= $(X11_DEPS_CFLAGS)
 display_LIBS		+= $(X11_DEPS_LIBS)
+endif
 if USE_GLX
 display_SOURCES		+= $(glx_display_SOURCES)
 display_CFLAGS		+= $(GL_DEPS_CFLAGS) $(GLU_DEPS_CFLAGS)
@@ -67,12 +69,22 @@ endif
 if USE_VAAPI
 vaapi_PROGS	= vaapi_h264 vaapi_vc1 vaapi_mpeg2 vaapi_mpeg4
 vaapi_source_c	= vaapi.c
-vaapi_CFLAGS	= -DUSE_VAAPI $(VAAPI_X11_DEPS_CFLAGS) $(VAAPI_GLX_DEPS_CFLAGS)
-vaapi_LIBS	= $(VAAPI_X11_DEPS_LIBS) $(VAAPI_GLX_DEPS_LIBS)
-vaapi_CFLAGS	+= $(VAAPI_DRM_DEPS_CFLAGS)
+vaapi_CFLAGS	= -DUSE_VAAPI
+vaapi_LIBS	=
+if USE_VAAPI_DRM
+vaapi_CFLAGS	+= $(VAAPI_DRM_DEPS_CFLAGS) -DUSE_VAAPI_DRM
 vaapi_LIBS	+= $(VAAPI_DRM_DEPS_LIBS)
+endif
+if USE_VAAPI_X11
+vaapi_CFLAGS	+= $(VAAPI_X11_DEPS_CFLAGS) -DUSE_VAAPI_X11
+vaapi_LIBS	+= $(VAAPI_X11_DEPS_LIBS)
+endif
+if USE_VAAPI_GLX
+vaapi_CFLAGS	+= $(VAAPI_GLX_DEPS_CFLAGS) -DUSE_VAAPI_GLX
+vaapi_LIBS	+= $(VAAPI_GLX_DEPS_LIBS)
+endif
 if USE_OLD_VAAPI
-vaapi_CFLAGS	+= $(OLD_VAAPI_CFLAGS)
+vaapi_CFLAGS	+= $(OLD_VAAPI_CFLAGS) -DUSE_OLD_VAAPI -DUSE_VAAPI_X11
 vaapi_LIBS	+= $(OLD_VAAPI_LIBS)
 endif
 else

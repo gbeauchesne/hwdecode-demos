@@ -55,9 +55,13 @@ AC_ARG_ENABLE(drm,
               AC_HELP_STRING([--enable-drm],
                              [enable DRM backend @<:@default=yes@:>@]),
               [], [enable_drm="yes"])
+AC_ARG_ENABLE(x11,
+              AC_HELP_STRING([--enable-x11],
+                             [enable X11 backend @<:@default=yes@:>@]),
+              [], [enable_x11="yes"])
 AC_ARG_ENABLE(glx,
               AC_HELP_STRING([--enable-glx],
-                             [enable OpenGL/X11 @<:@default=yes@:>@]),
+                             [enable GLX backend @<:@default=yes@:>@]),
               [], [enable_glx="yes"])
 
 AC_ARG_WITH(libva,
@@ -162,9 +166,21 @@ if test "$USE_DRM" = "yes"; then
 fi
 
 dnl Check for X11
-PKG_CHECK_MODULES(X11_DEPS, [x11])
-AC_SUBST(X11_DEPS_CFLAGS)
-AC_SUBST(X11_DEPS_LIBS)
+USE_X11="no"
+PKG_CHECK_MODULES(X11_DEPS, [x11], [HAVE_X11="yes"], [HAVE_X11="no"])
+if test "$enable_x11" = "yes" -a "$HAVE_X11" = "yes"; then
+    USE_X11="yes"
+    AC_SUBST(X11_DEPS_CFLAGS)
+    AC_SUBST(X11_DEPS_LIBS)
+fi
+AM_CONDITIONAL(USE_X11, [test "$USE_X11" = "yes"])
+if test "$USE_X11" = "yes"; then
+    AC_DEFINE(USE_X11, 1, [Defined if X11 is enabled])
+else
+    enable_glx="no"
+    enable_vdpau="no"
+    enable_xvba="no"
+fi
 
 dnl Check for OpenGL
 HAVE_GL="no"
@@ -250,8 +266,8 @@ AC_CACHE_CHECK([for old libVA API 0.29],
 ])
 USE_OLD_VAAPI="no"
 if test "$enable_vaapi:$ac_cv_have_old_vaapi" = "yes:yes"; then
+    USE_VAAPI="yes"
     USE_OLD_VAAPI="yes"
-    OLD_VAAPI_CFLAGS="-DUSE_OLD_VAAPI -DUSE_VAAPI_X11"
     OLD_VAAPI_LIBS="-lva"
 fi
 AC_SUBST(OLD_VAAPI_CFLAGS)
@@ -288,43 +304,45 @@ if test "$USE_DRM" = "yes"; then
 fi
 USE_VAAPI_DRM="no"
 if test "$USE_DRM:$enable_vaapi:$ac_cv_have_vaapi_drm" = "yes:yes:yes"; then
+    USE_VAAPI="yes"
     USE_VAAPI_DRM="yes"
-    VAAPI_DRM_DEPS_CFLAGS="$VAAPI_DRM_DEPS_CFLAGS -DUSE_VAAPI_DRM"
 fi
 AM_CONDITIONAL(USE_VAAPI_DRM, [test "$USE_VAAPI_DRM" = "yes"])
 
-if test "$with_libva" = "pkgconfig"; then
-    PKG_CHECK_MODULES(VAAPI_X11_DEPS, [libva-x11],
-        [ac_cv_have_vaapi_x11="yes"],
-        [ac_cv_have_vaapi_x11="no"]
-    )
-else
-    AC_CACHE_CHECK([for VA-API (x11) in ${with_libva}],
-        ac_cv_have_vaapi_x11, [
-        saved_CFLAGS="$CFLAGS"
-        saved_LIBS="$LIBS"
-        for lib in lib lib32 lib64; do
-            VAAPI_X11_DEPS_CFLAGS="-I${with_libva}/include"
-            VAAPI_X11_DEPS_LIBS="-L${with_libva}/$lib -lva-x11 -lva"
-            CFLAGS="$saved_CFLAGS $VAAPI_X11_DEPS_CFLAGS"
-            LIBS="$saved_LIBS $VAAPI_X11_DEPS_LIBS"
-            AC_TRY_LINK(
-                [#include <va/va_x11.h>],
-                [vaGetDisplay(NULL)],
-                [ac_cv_have_vaapi_x11="yes"; break],
-                [ac_cv_have_vaapi_x11="no"]
-            )
-        done
-        CFLAGS="$saved_CFLAGS"
-        LIBS="$saved_LIBS"
-    ])
+if test "$USE_X11" = "yes"; then
+    if test "$with_libva" = "pkgconfig"; then
+        PKG_CHECK_MODULES(VAAPI_X11_DEPS, [libva-x11],
+            [ac_cv_have_vaapi_x11="yes"],
+            [ac_cv_have_vaapi_x11="no"]
+        )
+    else
+        AC_CACHE_CHECK([for VA-API (x11) in ${with_libva}],
+            ac_cv_have_vaapi_x11, [
+            saved_CFLAGS="$CFLAGS"
+            saved_LIBS="$LIBS"
+            for lib in lib lib32 lib64; do
+                VAAPI_X11_DEPS_CFLAGS="-I${with_libva}/include"
+                VAAPI_X11_DEPS_LIBS="-L${with_libva}/$lib -lva-x11 -lva"
+                CFLAGS="$saved_CFLAGS $VAAPI_X11_DEPS_CFLAGS"
+                LIBS="$saved_LIBS $VAAPI_X11_DEPS_LIBS"
+                AC_TRY_LINK(
+                    [#include <va/va_x11.h>],
+                    [vaGetDisplay(NULL)],
+                    [ac_cv_have_vaapi_x11="yes"; break],
+                    [ac_cv_have_vaapi_x11="no"]
+                )
+            done
+            CFLAGS="$saved_CFLAGS"
+            LIBS="$saved_LIBS"
+        ])
+    fi
 fi
 USE_VAAPI_X11="no"
-if test "$enable_vaapi:$ac_cv_have_vaapi_x11" = "yes:yes"; then
+if test "$USE_X11:$enable_vaapi:$ac_cv_have_vaapi_x11" = "yes:yes:yes"; then
+    USE_VAAPI="yes"
     USE_VAAPI_X11="yes"
-    VAAPI_X11_DEPS_CFLAGS="$VAAPI_X11_DEPS_CFLAGS -DUSE_VAAPI_X11"
 fi
-AM_CONDITIONAL(USE_VAAPI, test "$USE_VAAPI_X11" = "yes" -o "$USE_OLD_VAAPI" = "yes")
+AM_CONDITIONAL(USE_VAAPI_X11, [test "$USE_VAAPI_X11" = "yes"])
 
 if test "$USE_GLX" = "yes"; then
     if test "$with_libva" = "pkgconfig"; then
@@ -356,10 +374,12 @@ if test "$USE_GLX" = "yes"; then
 fi
 USE_VAAPI_GLX="no"
 if test "$USE_GLX:$enable_vaapi:$ac_cv_have_vaapi_glx" = "yes:yes:yes"; then
+    USE_VAAPI="yes"
     USE_VAAPI_GLX="yes"
-    VAAPI_GLX_DEPS_CFLAGS="$VAAPI_GLX_DEPS_CFLAGS -DUSE_VAAPI_GLX"
 fi
-AM_CONDITIONAL(USE_VAAPI_GLX, test "$USE_GLX" = "yes")
+AM_CONDITIONAL(USE_VAAPI_GLX, [test "$USE_VAAPI_GLX" = "yes"])
+
+AM_CONDITIONAL(USE_VAAPI, [test "$USE_VAAPI" = "yes"])
 
 dnl Check for VDPAU
 AC_CACHE_CHECK([for VDPAU],
@@ -413,6 +433,6 @@ AC_SUBST(XVBA_DEPS_LIBS)
 AM_CONDITIONAL(USE_XVBA, test "$enable_xvba:$ac_cv_have_xvba" = "yes:yes")
 
 AC_OUTPUT([
-	Makefile
-	src/Makefile
+    Makefile
+    src/Makefile
 ])

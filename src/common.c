@@ -51,9 +51,19 @@
 #define HWACCEL_DEFAULT HWACCEL_NONE
 #endif
 
+#if !defined(DISPLAY_DEFAULT) && defined(USE_X11)
+# define DISPLAY_DEFAULT DISPLAY_X11
+#endif
+#if !defined(DISPLAY_DEFAULT) && defined(USE_DRM)
+# define DISPLAY_DEFAULT DISPLAY_DRM
+#endif
+#if !defined(DISPLAY_DEFAULT)
+# error "Undefined DISPLAY_DEFAULT"
+#endif
+
 static CommonContext g_common_context = {
     .hwaccel_type       = HWACCEL_DEFAULT,
-    .display_type       = DISPLAY_X11,
+    .display_type       = DISPLAY_DEFAULT,
     .window_size.width  = 640,
     .window_size.height = 480,
     .rotation           = ROTATION_NONE,
@@ -173,7 +183,9 @@ static const map_t map_hwaccel_types[] = {
 };
 
 static const map_t map_display_types[] = {
+#if USE_X11
     { DISPLAY_X11,              "x11"           },
+#endif
 #if USE_GLX
     { DISPLAY_GLX,              "glx"           },
 #endif
@@ -580,11 +592,13 @@ static const opt_t g_options[] = {
       UINT_VALUE(display_type, DISPLAY_DRM),
     },
 #endif
+#if USE_X11
     { /* Use X11 windowing system */
       "x11",
       "Use X11 windowing system",
       UINT_VALUE(display_type, DISPLAY_X11),
     },
+#endif
 #if USE_GLX
     { /* Use OpenGL/X11 rendering */
       "glx",
