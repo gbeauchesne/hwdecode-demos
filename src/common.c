@@ -345,6 +345,7 @@ typedef enum {
     OPT_TYPE_FLOAT,
     OPT_TYPE_ENUM,
     OPT_TYPE_STRUCT,
+    OPT_TYPE_STRING,
     OPT_TYPE_FLAGS, /* separator is ':' */
 } opt_type_t;
 
@@ -561,6 +562,10 @@ static int opt_subparse_flags(const char *arg, const opt_t *opt)
 #define STRUCT_VALUE_WITH_FLAG(FUNC, VAR)       \
     STRUCT_VALUE(FUNC, VAR),                    \
     .varflag       = &g_common_context.use_##VAR
+
+#define STRING_VALUE(VAR)                       \
+    .type          = OPT_TYPE_STRING,           \
+    .var           = &g_common_context.VAR
 
 static const opt_t g_options[] = {
     { /* Specify the size of the toplevel window */
@@ -827,6 +832,13 @@ static void print_enum(const opt_t *o)
     printf("\"%s\"", vs);
 }
 
+static void print_string(const opt_t *o)
+{
+    const char * const str = *(char **)o->var;
+
+    printf("\"%s\"", str);
+}
+
 static void print_var(const opt_t *o)
 {
     switch (o->type) {
@@ -836,6 +848,9 @@ static void print_var(const opt_t *o)
         break;
     case OPT_TYPE_ENUM:
         print_enum(o);
+        break;
+    case OPT_TYPE_STRING:
+        print_string(o);
         break;
     default:
         break;
@@ -894,6 +909,9 @@ static void show_help(const char *prog)
             break;
         case OPT_TYPE_FLAGS:
             printf("flags");
+            break;
+        case OPT_TYPE_STRING:
+            printf("string");
             break;
         }
         printf(")");
@@ -1001,6 +1019,12 @@ static int options_parse(int argc, char *argv[])
                             error("could not parse %s flags '%s'", arg, argv[i + 1]);
                         if (pvar)
                             *pvar = 1;
+                        break;
+                    case OPT_TYPE_STRING:
+                        assert(pval);
+                        if (++i >= argc)
+                            error("could not parse %s argument", arg);
+                        *(char **)pval = argv[i];
                         break;
                     default:
                         error("invalid option type %d", opt->type);
