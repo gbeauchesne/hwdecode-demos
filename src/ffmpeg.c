@@ -22,7 +22,10 @@
 #include "ffmpeg.h"
 #include "common.h"
 #include "utils.h"
-#include "x11.h"
+
+#if USE_X11
+# include "x11.h"
+#endif
 
 #ifdef USE_VAAPI
 # include "vaapi.h"
@@ -77,7 +80,19 @@ static int ffmpeg_exit(void)
 #ifdef USE_FFMPEG_VAAPI
 static int ffmpeg_vaapi_init(void)
 {
-    if (vaapi_init(vaGetDisplay(x11_get_context()->display)) < 0)
+    VADisplay dpy;
+
+    switch (display_type()) {
+#if USE_X11
+    case DISPLAY_X11:
+        dpy = vaGetDisplay(x11_get_context()->display);
+        break;
+#endif
+    default:
+        fprintf(stderr, "ERROR: unsupported display type\n");
+        return -1;
+    }
+    if (vaapi_init(dpy) < 0)
         return -1;
     if ((vaapi_context = calloc(1, sizeof(*vaapi_context))) == NULL)
         return -1;
@@ -238,7 +253,18 @@ int ffmpeg_decode(AVCodecContext *avctx, const uint8_t *buf, unsigned int buf_si
 
 static int ffmpeg_display(void)
 {
-    return x11_display();
+    switch (display_type()) {
+#if USE_X11
+    case DISPLAY_X11:
+        if (x11_display() < 0)
+            return -1;
+        break;
+#endif
+    default:
+        /* no display server needed */
+        break;
+    }
+    return 0;
 }
 
 int pre(void)
@@ -247,8 +273,17 @@ int pre(void)
     if (hwaccel_type() == HWACCEL_NONE)
         common_get_context()->getimage_mode = GETIMAGE_FROM_VIDEO;
 
-    if (x11_init() < 0)
-        return -1;
+    switch (display_type()) {
+#if USE_X11
+    case DISPLAY_X11:
+        if (x11_init() < 0)
+            return -1;
+        break;
+#endif
+    default:
+        /* no display server needed */
+        break;
+    }
 
     if (ffmpeg_init() < 0)
         return -1;
@@ -282,7 +317,18 @@ int post(void)
     if (ffmpeg_exit() < 0)
         return -1;
 
-    return x11_exit();
+    switch (display_type()) {
+#if USE_X11
+    case DISPLAY_X11:
+        if (x11_exit() < 0)
+            return -1;
+        break;
+#endif
+    default:
+        /* no display server needed */
+        break;
+    }
+    return 0;
 }
 
 int display(void)
