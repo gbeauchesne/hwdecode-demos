@@ -23,7 +23,10 @@
 #include "vaapi_compat.h"
 #include "common.h"
 #include "utils.h"
-#include "x11.h"
+
+#if USE_X11
+# include "x11.h"
+#endif
 
 #if USE_DRM
 # include "vo_drm.h"
@@ -33,11 +36,10 @@
 #endif
 
 #if USE_GLX
-#include "glx.h"
+# include "glx.h"
 #endif
-
 #if USE_VAAPI_GLX
-#include <va/va_glx.h>
+# include <va/va_glx.h>
 #endif
 
 #define DEBUG 1
@@ -1325,6 +1327,7 @@ int vaapi_decode(void)
     return 0;
 }
 
+#if USE_X11
 static int vaapi_display_cliprects(void)
 {
     CommonContext * const common = common_get_context();
@@ -1376,16 +1379,19 @@ end:
         return -1;
     return 0;
 }
+#endif
 
 int vaapi_display(void)
 {
     CommonContext * const common = common_get_context();
-    X11Context * const x11 = x11_get_context();
     VAAPIContext * const vaapi = vaapi_get_context();
+#if USE_X11
+    X11Context * const x11 = x11_get_context();
     unsigned int vaPutSurface_count = 0;
     unsigned int flags = VA_FRAME_PICTURE;
     VAStatus status;
     Drawable drawable;
+#endif
 
     if (!common || !vaapi)
         return -1;
@@ -1426,6 +1432,7 @@ int vaapi_display(void)
     if (display_type() == DISPLAY_DRM)
         return 0;
 
+#if USE_X11
     if (getimage_mode() == GETIMAGE_FROM_PIXMAP)
         drawable = x11->pixmap;
     else
@@ -1542,6 +1549,7 @@ int vaapi_display(void)
         if (!vaapi_check_status(status, "vaSyncSurface() for display"))
             return -1;
     }
+#endif
     return 0;
 }
 
@@ -1554,10 +1562,12 @@ int pre(void)
         return -1;
 
     switch (display_type()) {
+#if USE_X11
     case DISPLAY_X11:
         if (x11_init() < 0)
             return -1;
         break;
+#endif
 #if USE_GLX
     case DISPLAY_GLX:
         if (glx_init() < 0)
@@ -1570,6 +1580,9 @@ int pre(void)
             return -1;
         break;
 #endif
+    default:
+        fprintf(stderr, "ERROR: unsupported display type\n");
+        return -1;
     }
 
     switch (display_type()) {
@@ -1582,6 +1595,7 @@ int pre(void)
         break;
     }
 #endif
+#if USE_VAAPI_X11
     case DISPLAY_X11: {
         X11Context * const x11 = x11_get_context();
         if (!x11)
@@ -1589,6 +1603,7 @@ int pre(void)
         dpy = vaGetDisplay(x11->display);
         break;
     }
+#endif
 #if USE_VAAPI_DRM
     case DISPLAY_DRM: {
         DRMContext * const drm = drm_get_context();
@@ -1617,16 +1632,21 @@ int post(void)
             return -1;
         /* fall-through */
 #endif
+#if USE_X11
     case DISPLAY_X11:
         if (x11_exit() < 0)
             return -1;
         break;
+#endif
 #if USE_DRM
     case DISPLAY_DRM:
         if (drm_exit() < 0)
             return -1;
         break;
 #endif
+    default:
+        fprintf(stderr, "ERROR: unsupported display type\n");
+        return -1;
     }
     return 0;
 }
@@ -1641,12 +1661,17 @@ int display(void)
     case DISPLAY_GLX:
         return glx_display();
 #endif
+#if USE_X11
     case DISPLAY_X11:
         return x11_display();
+#endif
 #if USE_DRM
     case DISPLAY_DRM:
         return drm_display();
 #endif
+    default:
+        fprintf(stderr, "ERROR: unsupported display type\n");
+        return -1;
     }
     return 0;
 }
