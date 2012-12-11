@@ -25,6 +25,13 @@
 #include "utils.h"
 #include "x11.h"
 
+#if USE_DRM
+# include "vo_drm.h"
+#endif
+#if USE_VAAPI_DRM
+# include <va/va_drm.h>
+#endif
+
 #if USE_GLX
 #include "glx.h"
 #endif
@@ -1380,7 +1387,7 @@ int vaapi_display(void)
     VAStatus status;
     Drawable drawable;
 
-    if (!common || !x11 || !vaapi)
+    if (!common || !vaapi)
         return -1;
 
     if (putimage_mode() != PUTIMAGE_NONE) {
@@ -1414,6 +1421,9 @@ int vaapi_display(void)
     }
 
     if (getimage_mode() == GETIMAGE_FROM_VIDEO)
+        return 0;
+
+    if (display_type() == DISPLAY_DRM)
         return 0;
 
     if (getimage_mode() == GETIMAGE_FROM_PIXMAP)
@@ -1538,28 +1548,60 @@ int vaapi_display(void)
 #ifndef USE_FFMPEG
 int pre(void)
 {
-    X11Context *x11;
     VADisplay dpy;
 
     if (hwaccel_type() != HWACCEL_VAAPI)
         return -1;
 
-    if (x11_init() < 0)
-        return -1;
-    if ((x11 = x11_get_context()) == NULL)
-        return -1;
+    switch (display_type()) {
+    case DISPLAY_X11:
+        if (x11_init() < 0)
+            return -1;
+        break;
 #if USE_GLX
-    if (display_type() == DISPLAY_GLX) {
+    case DISPLAY_GLX:
         if (glx_init() < 0)
             return -1;
+        break;
+#endif
+#if USE_DRM
+    case DISPLAY_DRM:
+        if (drm_init() < 0)
+            return -1;
+        break;
+#endif
+    }
+
+    switch (display_type()) {
+#if USE_VAAPI_GLX
+    case DISPLAY_GLX: {
+        X11Context * const x11 = x11_get_context();
+        if (!x11)
+            return -1;
+        dpy = vaGetDisplayGLX(x11->display);
+        break;
     }
 #endif
-#if USE_VAAPI_GLX
-    if (display_type() == DISPLAY_GLX)
-        dpy = vaGetDisplayGLX(x11->display);
-    else
-#endif
+    case DISPLAY_X11: {
+        X11Context * const x11 = x11_get_context();
+        if (!x11)
+            return -1;
         dpy = vaGetDisplay(x11->display);
+        break;
+    }
+#if USE_VAAPI_DRM
+    case DISPLAY_DRM: {
+        DRMContext * const drm = drm_get_context();
+        if (!drm)
+            return -1;
+        dpy = vaGetDisplayDRM(drm->drm_device);
+        break;
+    }
+#endif
+    default:
+        dpy = NULL;
+        break;
+    }
     return vaapi_init(dpy);
 }
 
@@ -1567,24 +1609,46 @@ int post(void)
 {
     if (vaapi_exit() < 0)
         return -1;
+
+    switch (display_type()) {
 #if USE_GLX
-    if (display_type() == DISPLAY_GLX) {
+    case DISPLAY_GLX:
         if (glx_exit() < 0)
             return -1;
-    }
+        /* fall-through */
 #endif
-    return x11_init();
+    case DISPLAY_X11:
+        if (x11_exit() < 0)
+            return -1;
+        break;
+#if USE_DRM
+    case DISPLAY_DRM:
+        if (drm_exit() < 0)
+            return -1;
+        break;
+#endif
+    }
+    return 0;
 }
 
 int display(void)
 {
     if (vaapi_display() < 0)
         return -1;
+
+    switch (display_type()) {
 #if USE_GLX
-    if (display_type() == DISPLAY_GLX)
+    case DISPLAY_GLX:
         return glx_display();
 #endif
-    return x11_display();
+    case DISPLAY_X11:
+        return x11_display();
+#if USE_DRM
+    case DISPLAY_DRM:
+        return drm_display();
+#endif
+    }
+    return 0;
 }
 #endif
 

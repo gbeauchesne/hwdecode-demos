@@ -50,6 +50,11 @@ AC_ARG_ENABLE(xvba,
               AC_HELP_STRING([--enable-xvba],
                              [enable XvBA @<:@default=yes@:>@]),
               [], [enable_xvba="yes"])
+
+AC_ARG_ENABLE(drm,
+              AC_HELP_STRING([--enable-drm],
+                             [enable DRM backend @<:@default=yes@:>@]),
+              [], [enable_drm="yes"])
 AC_ARG_ENABLE(glx,
               AC_HELP_STRING([--enable-glx],
                              [enable OpenGL/X11 @<:@default=yes@:>@]),
@@ -137,6 +142,24 @@ if test "$ac_cv_have_cairo" = "yes"; then
     AC_DEFINE(HAVE_CAIRO, 1, [Defined if cairo is available])
 fi
 AM_CONDITIONAL(USE_CAIRO, test "$ac_cv_have_cairo" = "yes")
+
+dnl Check for DRM/libudev
+USE_DRM="no"
+if test "$enable_drm" = "yes"; then
+    PKG_CHECK_MODULES(DRM, [libdrm], [USE_DRM="yes"], [USE_DRM="no"])
+    PKG_CHECK_MODULES(UDEV, [libudev], [:], [USE_DRM="no"])
+
+    if test "$USE_DRM" = "yes"; then
+        saved_CPPFLAGS="$CPPFLAGS"
+        CPPFLAGS="$CPPFLAGS $DRM_CFLAGS"
+        AC_CHECK_HEADERS([drm_fourcc.h], [:], [USE_DRM="no"])
+        CPPFLAGS="$saved_CPPFLAGS"
+    fi
+fi
+AM_CONDITIONAL(USE_DRM, [test "$USE_DRM" = "yes"])
+if test "$USE_DRM" = "yes"; then
+    AC_DEFINE(USE_DRM, 1, [Defined if DRM is enabled])
+fi
 
 dnl Check for X11
 PKG_CHECK_MODULES(X11_DEPS, [x11])
@@ -234,6 +257,41 @@ fi
 AC_SUBST(OLD_VAAPI_CFLAGS)
 AC_SUBST(OLD_VAAPI_LIBS)
 AM_CONDITIONAL(USE_OLD_VAAPI, test "$USE_OLD_VAAPI" = "yes")
+
+if test "$USE_DRM" = "yes"; then
+    if test "$with_libva" = "pkgconfig"; then
+        PKG_CHECK_MODULES(VAAPI_DRM_DEPS, [libva-drm],
+            [ac_cv_have_vaapi_drm="yes"],
+            [ac_cv_have_vaapi_drm="no"]
+        )
+    else
+        AC_CACHE_CHECK([for VA-API (drm) in ${with_libva}],
+            ac_cv_have_vaapi_drm, [
+            saved_CFLAGS="$CFLAGS"
+            saved_LIBS="$LIBS"
+            for lib in lib lib32 lib64; do
+                VAAPI_DRM_DEPS_CFLAGS="-I${with_libva}/include"
+                VAAPI_DRM_DEPS_LIBS="-L${with_libva}/$lib -lva-drm -lva"
+                CFLAGS="$saved_CFLAGS $VAAPI_DRM_DEPS_CFLAGS"
+                LIBS="$saved_LIBS $VAAPI_DRM_DEPS_LIBS"
+                AC_TRY_LINK(
+                    [#include <va/va_drm.h>],
+                    [vaGetDisplayDRM(0)],
+                    [ac_cv_have_vaapi_drm="yes"; break],
+                    [ac_cv_have_vaapi_drm="no"]
+                )
+            done
+            CFLAGS="$saved_CFLAGS"
+            LIBS="$saved_LIBS"
+        ])
+    fi
+fi
+USE_VAAPI_DRM="no"
+if test "$USE_DRM:$enable_vaapi:$ac_cv_have_vaapi_drm" = "yes:yes:yes"; then
+    USE_VAAPI_DRM="yes"
+    VAAPI_DRM_DEPS_CFLAGS="$VAAPI_DRM_DEPS_CFLAGS -DUSE_VAAPI_DRM"
+fi
+AM_CONDITIONAL(USE_VAAPI_DRM, [test "$USE_VAAPI_DRM" = "yes"])
 
 if test "$with_libva" = "pkgconfig"; then
     PKG_CHECK_MODULES(VAAPI_X11_DEPS, [libva-x11],

@@ -23,6 +23,7 @@ noinst_HEADERS =	\
 	vc1.h		\
 	vdpau.h		\
 	vdpau_gate.h	\
+	vo_drm.h	\
 	x11.h		\
 	xvba.h		\
 	xvba_gate.h	\
@@ -46,9 +47,17 @@ bin_PROGRAMS =		\
 x11_display_SOURCES	= x11.c utils_x11.c
 glx_display_SOURCES	= glx.c utils_glx.c
 
-display_SOURCES		= $(x11_display_SOURCES)
-display_CFLAGS		= $(X11_DEPS_CFLAGS)
-display_LIBS		= $(X11_DEPS_LIBS)
+display_SOURCES		=
+display_CFLAGS		=
+display_LIBS		=
+if USE_DRM
+display_SOURCES		+= vo_drm.c
+display_CFLAGS		+= $(DRM_CFLAGS) $(UDEV_CFLAGS)
+display_LIBS		+= $(DRM_LIBS) $(UDEV_LIBS)
+endif
+display_SOURCES		+= $(x11_display_SOURCES)
+display_CFLAGS		+= $(X11_DEPS_CFLAGS)
+display_LIBS		+= $(X11_DEPS_LIBS)
 if USE_GLX
 display_SOURCES		+= $(glx_display_SOURCES)
 display_CFLAGS		+= $(GL_DEPS_CFLAGS) $(GLU_DEPS_CFLAGS)
@@ -60,6 +69,8 @@ vaapi_PROGS	= vaapi_h264 vaapi_vc1 vaapi_mpeg2 vaapi_mpeg4
 vaapi_source_c	= vaapi.c
 vaapi_CFLAGS	= -DUSE_VAAPI $(VAAPI_X11_DEPS_CFLAGS) $(VAAPI_GLX_DEPS_CFLAGS)
 vaapi_LIBS	= $(VAAPI_X11_DEPS_LIBS) $(VAAPI_GLX_DEPS_LIBS)
+vaapi_CFLAGS	+= $(VAAPI_DRM_DEPS_CFLAGS)
+vaapi_LIBS	+= $(VAAPI_DRM_DEPS_LIBS)
 if USE_OLD_VAAPI
 vaapi_CFLAGS	+= $(OLD_VAAPI_CFLAGS)
 vaapi_LIBS	+= $(OLD_VAAPI_LIBS)

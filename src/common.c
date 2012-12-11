@@ -177,6 +177,9 @@ static const map_t map_display_types[] = {
 #if USE_GLX
     { DISPLAY_GLX,              "glx"           },
 #endif
+#if USE_DRM
+    { DISPLAY_DRM,              "drm"           },
+#endif
     { 0, }
 };
 
@@ -565,6 +568,13 @@ static const opt_t g_options[] = {
       "Specify the size of the toplevel window",
       STRUCT_VALUE(size, window_size),
     },
+#if USE_DRM
+    { /* Use DRM backend */
+      "drm",
+      "Use DRM backend",
+      UINT_VALUE(display_type, DISPLAY_DRM),
+    },
+#endif
     { /* Use X11 windowing system */
       "x11",
       "Use X11 windowing system",

@@ -32,7 +32,8 @@ enum HWAccelType {
 
 enum DisplayType {
     DISPLAY_X11 = 1,
-    DISPLAY_GLX
+    DISPLAY_GLX,
+    DISPLAY_DRM
 };
 
 enum RotationMode {
