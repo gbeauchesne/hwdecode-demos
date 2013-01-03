@@ -1120,6 +1120,7 @@ static int blend_image(VASurfaceID surface, Image *img)
     if (!subpic_format)
         goto end;
 
+    /* Check HW supports the expected subpicture features */
     if (common->use_vaapi_subpicture_flags) {
         static const struct {
             unsigned int flags;
@@ -1133,11 +1134,12 @@ static int blend_image(VASurfaceID surface, Image *img)
 #endif
             { 0, }
         };
-        const unsigned int flags =
-            common->vaapi_subpicture_flags ^ subpic_flags;
+
+        const unsigned int missing_flags =
+            common->vaapi_subpicture_flags & ~subpic_flags;
 
         for (i = 0; g_flags[i].flags != 0; i++) {
-            if (flags & g_flags[i].flags) {
+            if (missing_flags & g_flags[i].flags) {
                 D(bug("driver does not support %s subpicture flag\n",
                       g_flags[i].name));
                 goto end;
