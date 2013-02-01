@@ -94,6 +94,9 @@ fi
 dnl Checks for libraries.
 AC_CHECK_LIB(rt, timer_create)
 
+dnl Checks if dl() comes from the C library or -ldl
+AC_SEARCH_LIBS([dlopen], [dl])
+
 dnl Checks for library functions.
 AC_CHECK_FUNCS(clock_gettime)
 
