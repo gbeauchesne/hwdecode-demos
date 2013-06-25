@@ -11,6 +11,7 @@ noinst_HEADERS =	\
 	glx_compat.h	\
 	h264.h		\
 	image.h		\
+	jpeg.h		\
 	mpeg2.h		\
 	mpeg4.h		\
 	put_bits.h	\
@@ -31,6 +32,7 @@ noinst_HEADERS =	\
 
 dist_pkgdata_DATA =	\
 	h264.mp4	\
+	jpeg.jpg	\
 	mpeg2.m2v	\
 	mpeg4.mp4	\
 	vc1.raw		\
@@ -67,7 +69,7 @@ display_LIBS		+= $(GL_DEPS_LIBS) $(GLU_DEPS_LIBS)
 endif
 
 if USE_VAAPI
-vaapi_PROGS	= vaapi_h264 vaapi_vc1 vaapi_mpeg2 vaapi_mpeg4
+vaapi_PROGS	= vaapi_h264 vaapi_vc1 vaapi_mpeg2 vaapi_mpeg4 vaapi_jpeg
 vaapi_source_c	= vaapi.c
 vaapi_CFLAGS	= -DUSE_VAAPI
 vaapi_LIBS	=
@@ -165,6 +167,9 @@ vaapi_mpeg2_LDADD	= $(vaapi_common_LIBS)
 vaapi_mpeg4_SOURCES	= $(vaapi_common_SOURCES) mpeg4.c vaapi_mpeg4.c
 vaapi_mpeg4_CFLAGS	= $(vaapi_common_CFLAGS)
 vaapi_mpeg4_LDADD	= $(vaapi_common_LIBS)
+vaapi_jpeg_SOURCES	= $(vaapi_common_SOURCES) jpeg.c vaapi_jpeg.c
+vaapi_jpeg_CFLAGS	= $(vaapi_common_CFLAGS)
+vaapi_jpeg_LDADD	= $(vaapi_common_LIBS)
 
 vdpau_common_SOURCES	= $(common_SOURCES) $(vdpau_source_c)
 vdpau_common_CFLAGS	= $(common_CFLAGS) $(vdpau_CFLAGS)

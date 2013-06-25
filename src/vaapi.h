@@ -55,6 +55,7 @@ struct _VAAPIContext {
     VABufferID          pic_param_buf_id;
     VABufferID          iq_matrix_buf_id;
     VABufferID          bitplane_buf_id;
+    VABufferID          huf_table_buf_id;
     VABufferID         *slice_buf_ids;
     unsigned int        n_slice_buf_ids;
     unsigned int        slice_buf_ids_alloc;
@@ -79,6 +80,7 @@ int vaapi_check_status(VAStatus status, const char *msg);
 void *vaapi_alloc_picture(unsigned int size);
 void *vaapi_alloc_iq_matrix(unsigned int size);
 void *vaapi_alloc_bitplane(unsigned int size);
+void *vaapi_alloc_huf_table(unsigned int size);
 void *vaapi_alloc_slice(unsigned int size, const uint8_t *buf, unsigned int buf_size);
 
 int vaapi_init_decoder(VAProfile        profile,

@@ -285,6 +285,7 @@ int vaapi_exit(void)
     destroy_buffers(vaapi->display, &vaapi->pic_param_buf_id, 1);
     destroy_buffers(vaapi->display, &vaapi->iq_matrix_buf_id, 1);
     destroy_buffers(vaapi->display, &vaapi->bitplane_buf_id, 1);
+    destroy_buffers(vaapi->display, &vaapi->huf_table_buf_id, 1);
     destroy_buffers(vaapi->display, vaapi->slice_buf_ids, vaapi->n_slice_buf_ids);
 
     if (vaapi->subpic_flags) {
@@ -425,6 +426,15 @@ void *vaapi_alloc_bitplane(unsigned int size)
     if (!vaapi)
         return NULL;
     return alloc_buffer(vaapi, VABitPlaneBufferType, size, &vaapi->bitplane_buf_id);
+}
+
+void *vaapi_alloc_huf_table(unsigned int size)
+{
+    VAAPIContext *vaapi = vaapi_get_context();
+    if (!vaapi)
+        return NULL;
+    return alloc_buffer(vaapi, VAHuffmanTableBufferType, size,
+        &vaapi->huf_table_buf_id);
 }
 
 static int commit_slices(VAAPIContext *vaapi)
@@ -1280,7 +1290,7 @@ end:
 int vaapi_decode(void)
 {
     VAAPIContext * const vaapi = vaapi_get_context();
-    VABufferID va_buffers[3];
+    VABufferID va_buffers[4];
     unsigned int n_va_buffers = 0;
     VAStatus status;
 
@@ -1301,6 +1311,11 @@ int vaapi_decode(void)
     if (vaapi->bitplane_buf_id) {
         vaUnmapBuffer(vaapi->display, vaapi->bitplane_buf_id);
         va_buffers[n_va_buffers++] = vaapi->bitplane_buf_id;
+    }
+
+    if (vaapi->huf_table_buf_id) {
+        vaUnmapBuffer(vaapi->display, vaapi->huf_table_buf_id);
+        va_buffers[n_va_buffers++] = vaapi->huf_table_buf_id;
     }
 
     status = vaBeginPicture(vaapi->display, vaapi->context_id,
