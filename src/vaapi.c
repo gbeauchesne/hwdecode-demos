@@ -433,8 +433,12 @@ void *vaapi_alloc_huf_table(unsigned int size)
     VAAPIContext *vaapi = vaapi_get_context();
     if (!vaapi)
         return NULL;
+#if VA_CHECK_VERSION(0,32,1)
     return alloc_buffer(vaapi, VAHuffmanTableBufferType, size,
         &vaapi->huf_table_buf_id);
+#else
+    return NULL;
+#endif
 }
 
 static int commit_slices(VAAPIContext *vaapi)

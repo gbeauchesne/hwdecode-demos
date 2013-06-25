@@ -69,7 +69,10 @@ display_LIBS		+= $(GL_DEPS_LIBS) $(GLU_DEPS_LIBS)
 endif
 
 if USE_VAAPI
-vaapi_PROGS	= vaapi_h264 vaapi_vc1 vaapi_mpeg2 vaapi_mpeg4 vaapi_jpeg
+vaapi_PROGS	= vaapi_h264 vaapi_vc1 vaapi_mpeg2 vaapi_mpeg4
+if USE_VAAPI_JPEG
+vaapi_PROGS	+= vaapi_jpeg
+endif
 vaapi_source_c	= vaapi.c
 vaapi_CFLAGS	= -DUSE_VAAPI
 vaapi_LIBS	=

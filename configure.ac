@@ -277,6 +277,35 @@ AC_SUBST(OLD_VAAPI_CFLAGS)
 AC_SUBST(OLD_VAAPI_LIBS)
 AM_CONDITIONAL(USE_OLD_VAAPI, test "$USE_OLD_VAAPI" = "yes")
 
+if test "$enable_vaapi:$ac_cv_have_old_vaapi" = "yes:no"; then
+    if test "$with_libva" = "pkgconfig"; then
+        PKG_CHECK_MODULES(VAAPI_DEPS, [libva],
+            [ac_cv_have_vaapi="yes" USE_VAAPI="yes"],
+            [ac_cv_have_vaapi="no"]
+        )
+    else
+        AC_CACHE_CHECK([for VA-API (core) in ${with_libva}],
+            ac_cv_have_vaapi, [
+            saved_CFLAGS="$CFLAGS"
+            saved_LIBS="$LIBS"
+            for lib in lib lib32 lib64; do
+                VAAPI_DEPS_CFLAGS="-I${with_libva}/include"
+                VAAPI_DEPS_LIBS="-L${with_libva}/$lib -lva-drm -lva"
+                CFLAGS="$saved_CFLAGS $VAAPI_DEPS_CFLAGS"
+                LIBS="$saved_LIBS $VAAPI_DEPS_LIBS"
+                AC_TRY_LINK(
+                    [#include <va/va.h>],
+                    [vaInitialize(0,0,0)],
+                    [ac_cv_have_vaapi="yes" USE_VAAPI="yes"; break],
+                    [ac_cv_have_vaapi="no"]
+                )
+            done
+            CFLAGS="$saved_CFLAGS"
+            LIBS="$saved_LIBS"
+        ])
+    fi
+fi
+
 if test "$USE_DRM" = "yes"; then
     if test "$with_libva" = "pkgconfig"; then
         PKG_CHECK_MODULES(VAAPI_DRM_DEPS, [libva-drm],
@@ -383,6 +412,29 @@ fi
 AM_CONDITIONAL(USE_VAAPI_GLX, [test "$USE_VAAPI_GLX" = "yes"])
 
 AM_CONDITIONAL(USE_VAAPI, [test "$USE_VAAPI" = "yes"])
+
+dnl Check for JPEG decoding API (0.32.1+)
+USE_VAAPI_JPEG=0
+AC_CACHE_CHECK([for VA/JPEG decoding API],
+    ac_cv_have_vaapi_jpeg_decoding, [
+    saved_CPPFLAGS="$CPPFLAGS"
+    CPPFLAGS="$CPPFLAGS $VAAPI_DEPS_CFLAGS"
+    saved_LIBS="$LIBS"
+    LIBS="$LIBS $VAAPI_DEPS_LIBS"
+    AC_COMPILE_IFELSE(
+        [AC_LANG_PROGRAM(
+            [[#include <va/va.h>]],
+            [[VAPictureParameterBufferJPEGBaseline pic_param;
+              VASliceParameterBufferJPEGBaseline slice_param;
+              VAHuffmanTableBufferJPEGBaseline huffman_table;
+              VAIQMatrixBufferJPEGBaseline iq_matrix;]])],
+        [ac_cv_have_vaapi_jpeg_decoding="yes" USE_VAAPI_JPEG=1],
+        [ac_cv_have_vaapi_jpeg_decoding="no"]
+    )
+    CPPFLAGS="$saved_CPPFLAGS"
+    LIBS="$saved_LIBS"
+])
+AM_CONDITIONAL([USE_VAAPI_JPEG], [test $USE_VAAPI_JPEG -eq 1])
 
 dnl Check for VDPAU
 AC_CACHE_CHECK([for VDPAU],
