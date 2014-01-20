@@ -126,9 +126,9 @@ static void destroy_buffers(VADisplay display, VABufferID *buffers, unsigned int
 {
     unsigned int i;
     for (i = 0; i < n_buffers; i++) {
-        if (buffers[i]) {
+        if (buffers[i] != VA_INVALID_ID) {
             vaDestroyBuffer(display, buffers[i]);
-            buffers[i] = 0;
+            buffers[i] = VA_INVALID_ID;
         }
     }
 }
@@ -238,9 +238,16 @@ int vaapi_init(VADisplay display)
     if ((vaapi = calloc(1, sizeof(*vaapi))) == NULL)
         goto error;
     vaapi->display               = display;
+    vaapi->config_id             = VA_INVALID_ID;
+    vaapi->context_id            = VA_INVALID_ID;
+    vaapi->surface_id            = VA_INVALID_ID;
     vaapi->subpic_image.image_id = VA_INVALID_ID;
     for (i = 0; i < ARRAY_ELEMS(vaapi->subpic_ids); i++)
         vaapi->subpic_ids[i]     = VA_INVALID_ID;
+    vaapi->pic_param_buf_id      = VA_INVALID_ID;
+    vaapi->iq_matrix_buf_id      = VA_INVALID_ID;
+    vaapi->bitplane_buf_id       = VA_INVALID_ID;
+    vaapi->huf_table_buf_id      = VA_INVALID_ID;
     vaapi->display_attrs         = display_attrs;
     vaapi->n_display_attrs       = num_display_attrs;
 
@@ -342,19 +349,19 @@ int vaapi_exit(void)
         }
     }
 
-    if (vaapi->context_id) {
+    if (vaapi->context_id != VA_INVALID_ID) {
         vaDestroyContext(vaapi->display, vaapi->context_id);
-        vaapi->context_id = 0;
+        vaapi->context_id = VA_INVALID_ID;
     }
 
-    if (vaapi->surface_id) {
+    if (vaapi->surface_id != VA_INVALID_ID) {
         vaDestroySurfaces(vaapi->display, &vaapi->surface_id, 1);
-        vaapi->surface_id = 0;
+        vaapi->surface_id = VA_INVALID_ID;
     }
 
-    if (vaapi->config_id) {
+    if (vaapi->config_id != VA_INVALID_ID) {
         vaDestroyConfig(vaapi->display, vaapi->config_id);
-        vaapi->config_id = 0;
+        vaapi->config_id = VA_INVALID_ID;
     }
 
     if (vaapi->display_attrs) {
@@ -391,7 +398,7 @@ static void *alloc_buffer(VAAPIContext *vaapi, int type, unsigned int size, VABu
     VAStatus status;
     void *data = NULL;
 
-    *buf_id = 0;
+    *buf_id = VA_INVALID_ID;
     status = vaCreateBuffer(vaapi->display, vaapi->context_id,
                             type, size, 1, NULL, buf_id);
     if (!vaapi_check_status(status, "vaCreateBuffer()"))
@@ -458,7 +465,7 @@ static int commit_slices(VAAPIContext *vaapi)
         return -1;
     vaapi->slice_buf_ids = slice_buf_ids;
 
-    slice_param_buf_id = 0;
+    slice_param_buf_id = VA_INVALID_ID;
     status = vaCreateBuffer(vaapi->display, vaapi->context_id,
                             VASliceParameterBufferType,
                             vaapi->slice_param_size,
@@ -468,7 +475,7 @@ static int commit_slices(VAAPIContext *vaapi)
         return -1;
     vaapi->n_slice_params = 0;
 
-    slice_data_buf_id = 0;
+    slice_data_buf_id = VA_INVALID_ID;
     status = vaCreateBuffer(vaapi->display, vaapi->context_id,
                             VASliceDataBufferType,
                             vaapi->slice_data_size,
@@ -584,9 +591,9 @@ int vaapi_init_decoder(VAProfile    profile,
 {
     VAAPIContext * const vaapi = vaapi_get_context();
     VAConfigAttrib attrib;
-    VAConfigID config_id = 0;
-    VAContextID context_id = 0;
-    VASurfaceID surface_id = 0;
+    VAConfigID config_id = VA_INVALID_ID;
+    VAContextID context_id = VA_INVALID_ID;
+    VASurfaceID surface_id = VA_INVALID_ID;
     VAStatus status;
 
     if (!vaapi)
@@ -616,7 +623,7 @@ int vaapi_init_decoder(VAProfile    profile,
 #endif
 
     if (vaapi->profile != profile || vaapi->entrypoint != entrypoint) {
-        if (vaapi->config_id)
+        if (vaapi->config_id != VA_INVALID_ID)
             vaDestroyConfig(vaapi->display, vaapi->config_id);
 
         attrib.type = VAConfigAttribRTFormat;
@@ -636,7 +643,7 @@ int vaapi_init_decoder(VAProfile    profile,
         config_id = vaapi->config_id;
 
     if (vaapi->picture_width != picture_width || vaapi->picture_height != picture_height) {
-        if (vaapi->surface_id)
+        if (vaapi->surface_id != VA_INVALID_ID)
             vaDestroySurfaces(vaapi->display, &vaapi->surface_id, 1);
 
         status = vaCreateSurfaces(vaapi->display, picture_width, picture_height,
@@ -644,7 +651,7 @@ int vaapi_init_decoder(VAProfile    profile,
         if (!vaapi_check_status(status, "vaCreateSurfaces()"))
             return -1;
 
-        if (vaapi->context_id)
+        if (vaapi->context_id != VA_INVALID_ID)
             vaDestroyContext(vaapi->display, vaapi->context_id);
 
         status = vaCreateContext(vaapi->display, config_id,
@@ -1298,7 +1305,11 @@ int vaapi_decode(void)
     unsigned int n_va_buffers = 0;
     VAStatus status;
 
-    if (!vaapi || vaapi->context_id == 0 || vaapi->surface_id == 0)
+    if (!vaapi)
+        return -1;
+    if (vaapi->context_id == VA_INVALID_ID)
+        return -1;
+    if (vaapi->surface_id == VA_INVALID_ID)
         return -1;
 
     if (commit_slices(vaapi) < 0)
@@ -1307,17 +1318,17 @@ int vaapi_decode(void)
     vaUnmapBuffer(vaapi->display, vaapi->pic_param_buf_id);
     va_buffers[n_va_buffers++] = vaapi->pic_param_buf_id;
 
-    if (vaapi->iq_matrix_buf_id) {
+    if (vaapi->iq_matrix_buf_id != VA_INVALID_ID) {
         vaUnmapBuffer(vaapi->display, vaapi->iq_matrix_buf_id);
         va_buffers[n_va_buffers++] = vaapi->iq_matrix_buf_id;
     }
 
-    if (vaapi->bitplane_buf_id) {
+    if (vaapi->bitplane_buf_id != VA_INVALID_ID) {
         vaUnmapBuffer(vaapi->display, vaapi->bitplane_buf_id);
         va_buffers[n_va_buffers++] = vaapi->bitplane_buf_id;
     }
 
-    if (vaapi->huf_table_buf_id) {
+    if (vaapi->huf_table_buf_id != VA_INVALID_ID) {
         vaUnmapBuffer(vaapi->display, vaapi->huf_table_buf_id);
         va_buffers[n_va_buffers++] = vaapi->huf_table_buf_id;
     }
