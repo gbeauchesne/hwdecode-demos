@@ -42,10 +42,14 @@ int glx_init(void)
 {
     GLContextState old_cs;
     GLXContext *glx;
-    X11Context * const x11 = x11_get_context();
+    X11Context *x11;
 
     if (glx_context)
         return 0;
+
+    if (x11_init() < 0)
+        return -1;
+    x11 = x11_get_context();
 
     glx = calloc(1, sizeof(*glx));
     if (!glx)
