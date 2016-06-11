@@ -98,6 +98,8 @@ int decode(void)
     NEW(COPY_BFM(pic_fields, bits, reference_pic_flag));
     pic_param->frame_num = 0;
     pic_param->CurrPic.picture_id = vaapi->surface_id;
+    pic_param->CurrPic.frame_idx = 0;
+    pic_param->CurrPic.flags = 0;
     pic_param->CurrPic.TopFieldOrderCnt = 0;
     pic_param->CurrPic.BottomFieldOrderCnt = 0;
     for (i = 0; i < 16; i++)
