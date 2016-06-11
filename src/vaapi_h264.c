@@ -27,6 +27,7 @@ static void vaapi_h264_init_picture(VAPictureH264 *va_pic)
 {
     va_pic->picture_id          = 0xffffffff;
     va_pic->flags               = VA_PICTURE_H264_INVALID;
+    va_pic->frame_idx           = 0;
     va_pic->TopFieldOrderCnt    = 0;
     va_pic->BottomFieldOrderCnt = 0;
 }
