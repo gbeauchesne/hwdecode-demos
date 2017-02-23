@@ -162,7 +162,7 @@ static void draw_flower(cairo_t *cr, int x, int y, int petal_size)
         cairo_rotate(cr, gen_random_int_range(0, 6));
 
         do {
-            idx = gen_random_int_range(0, ((sizeof(colors) / sizeof(double) / 3)) * 3);
+            idx = gen_random_int_range(0, sizeof(colors) / sizeof(double) / 3) * 3;
         } while (idx == last_idx);
 
         cairo_set_source_rgba(cr,
@@ -203,7 +203,7 @@ static void draw_flower(cairo_t *cr, int x, int y, int petal_size)
 
     /* Finally draw flower center */
     do {
-        idx = gen_random_int_range(0, ((sizeof(colors) / sizeof(double) / 3)) * 3);
+        idx = gen_random_int_range(0, sizeof(colors) / sizeof(double) / 3) * 3;
     } while (idx == last_idx);
 
     if (petal_size < 0)
