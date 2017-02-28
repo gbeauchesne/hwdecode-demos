@@ -58,22 +58,40 @@ static const char *string_of_VAProfile(VAProfile profile)
     switch (profile) {
 #define PROFILE(profile) \
         case VAProfile##profile: return "VAProfile" #profile
+        PROFILE(None);
         PROFILE(MPEG2Simple);
         PROFILE(MPEG2Main);
         PROFILE(MPEG4Simple);
         PROFILE(MPEG4AdvancedSimple);
         PROFILE(MPEG4Main);
-#if VA_CHECK_VERSION(0,32,0)
-        PROFILE(JPEGBaseline);
-        PROFILE(H263Baseline);
-        PROFILE(H264ConstrainedBaseline);
-#endif
         PROFILE(H264Baseline);
         PROFILE(H264Main);
         PROFILE(H264High);
         PROFILE(VC1Simple);
         PROFILE(VC1Main);
         PROFILE(VC1Advanced);
+#if VA_CHECK_VERSION(0,32,0)
+        PROFILE(H263Baseline);
+        PROFILE(JPEGBaseline);
+        PROFILE(H264ConstrainedBaseline);
+#endif
+#if VA_CHECK_VERSION(0,35,0)
+        PROFILE(VP8Version0_3);
+#endif
+#if VA_CHECK_VERSION(0,35,2)
+        PROFILE(H264MultiviewHigh);
+        PROFILE(H264StereoHigh);
+#endif
+#if VA_CHECK_VERSION(0,37,1)
+        PROFILE(HEVCMain);
+        PROFILE(HEVCMain10);
+        PROFILE(VP9Profile0);
+#endif
+#if VA_CHECK_VERSION(0,39,0)
+        PROFILE(VP9Profile1);
+        PROFILE(VP9Profile2);
+        PROFILE(VP9Profile3);
+#endif
 #undef PROFILE
     default: break;
     }

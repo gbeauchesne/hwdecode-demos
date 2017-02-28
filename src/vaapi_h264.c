@@ -27,6 +27,7 @@ static void vaapi_h264_init_picture(VAPictureH264 *va_pic)
 {
     va_pic->picture_id          = 0xffffffff;
     va_pic->flags               = VA_PICTURE_H264_INVALID;
+    va_pic->frame_idx           = 0;
     va_pic->TopFieldOrderCnt    = 0;
     va_pic->BottomFieldOrderCnt = 0;
 }
@@ -98,6 +99,8 @@ int decode(void)
     NEW(COPY_BFM(pic_fields, bits, reference_pic_flag));
     pic_param->frame_num = 0;
     pic_param->CurrPic.picture_id = vaapi->surface_id;
+    pic_param->CurrPic.frame_idx = 0;
+    pic_param->CurrPic.flags = 0;
     pic_param->CurrPic.TopFieldOrderCnt = 0;
     pic_param->CurrPic.BottomFieldOrderCnt = 0;
     for (i = 0; i < 16; i++)

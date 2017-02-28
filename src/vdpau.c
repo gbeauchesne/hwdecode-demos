@@ -852,7 +852,7 @@ int vdpau_decode(void)
     status = vdpau_decoder_render(
         vdpau->decoder,
         vdpau->video_surface.vdp_surface,
-        (VdpPictureInfo)&vdpau->picture_info,
+        (VdpPictureInfo*)&vdpau->picture_info,
         vdpau->bitstream_buffers_count,
         vdpau->bitstream_buffers
     );
